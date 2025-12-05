@@ -1,0 +1,1 @@
+import React from'react';import{TouchableOpacity,Text}from'react-native';export default function Button({title,onPress}){return(<TouchableOpacity onPress={onPress} style={{padding:12,backgroundColor:'#1976D2',borderRadius:8}}><Text style={{color:'#fff'}}>{title}</Text></TouchableOpacity>)}

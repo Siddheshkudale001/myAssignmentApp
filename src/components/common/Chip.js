@@ -1,0 +1,1 @@
+import React from'react';import{TouchableOpacity,Text}from'react-native';export default function Chip({label,onPress}){return(<TouchableOpacity onPress={onPress} style={{borderWidth:1,borderColor:'#ccc',borderRadius:16,padding:8,margin:4}}><Text>{label}</Text></TouchableOpacity>)}

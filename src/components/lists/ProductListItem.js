@@ -1,0 +1,1 @@
+import React from'react';import{View,Text}from'react-native';export default function ProductListItem(){return(<View style={{padding:12,borderBottomWidth:1,borderColor:'#ccc'}}><Text>Item</Text></View>)}

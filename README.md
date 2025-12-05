@@ -1,97 +1,125 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# myAssignmentApp
 
-# Getting Started
+A modular, scalable mobile application (initial phase) with a clean folder structure for components, screens, navigation, and UI designs. This README will be updated as the project evolves.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+---
 
-## Step 1: Start Metro
+## 🏗 Architecture Overview
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+**Layered, feature-first structure**:
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+- **App Shell**: Entry point, providers (theme, navigation), global configuration.
+- **Navigation**: Centralized route definitions using React Navigation (stack/tab), screen registration, deep linking config.
+- **Screens**: Page-level containers that orchestrate UI and business logic. Each screen composes components and calls services.
+- **Components**: Reusable, stateless UI building blocks (buttons, cards, inputs).
+- **Design System**: Theme tokens (colors, spacing, typography), common styles, and shared assets.
+- **Services / APIs** *(optional at this stage)*: Network calls and data access abstraction.
+- **Utils**: Pure helper functions, validators, formatters.
 
-```sh
-# Using npm
+> Goal: Keep presentation (UI) and orchestration (navigation/state) separate from data access, ensuring testability and maintainability.
+
+---
+
+## 🛠️ Setup Instructions
+
+### Prerequisites
+- Node.js >= 18
+- npm or yarn
+- React Native CLI (if this is a RN app) and platform SDKs (Android Studio / Xcode)
+- Git installed
+
+### Install & Run
+```bash
+# install dependencies
+npm install
+# or
+yarn
+
+# start metro
 npm start
-
-# OR using Yarn
-yarn start
-```
-
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+# run platforms (adjust as needed)
 npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+### Environment Variables (Optional)
+Create a `.env` file for secrets/tokens when APIs are added later (never commit secrets).
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+---
 
-## Step 3: Modify your app
+## 🌐 APIs Used
 
-Now that you have successfully run the app, let's make changes!
+Currently **none** (initial phase). This section will list:
+- Base URL(s)
+- Endpoints & request/response examples
+- Auth mechanisms (e.g., OAuth, API keys)
+- Error handling and retry strategy
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+---
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+## 📁 Folder Structure Explanation
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+A typical structure (adjusted to your current folders):
 
-## Congratulations! :tada:
+```
+myAssignmentApp/
+├─ src/
+│  ├─ components/        # Reusable UI components
+│  │  ├─ Button/
+│  │  └─ Card/
+│  ├─ screens/           # Screen containers
+│  │  ├─ HomeScreen.tsx
+│  │  └─ DetailsScreen.tsx
+│  ├─ navigation/        # React Navigation setup
+│  │  ├─ AppNavigator.tsx
+│  │  └─ routes.ts
+│  ├─ designs/           # Theme, styles, assets
+│  │  ├─ theme.ts
+│  │  └─ typography.ts
+│  ├─ utils/             # Helpers & formatters
+│  ├─ services/          # API clients (future)
+│  ├─ hooks/             # Custom hooks
+│  └─ index.tsx          # App entry
+├─ .gitignore
+├─ package.json
+├─ README.md
+└─ tsconfig.json         # if TypeScript
+```
 
-You've successfully run and modified your React Native App. :partying_face:
+**Notes**
+- Co-locate component-specific styles and tests within their folders.
+- Use `index.ts` barrels for clean imports.
+- Keep navigation definitions centralized.
 
-### Now what?
+---
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+## ✅ Commit & Branch Strategy (Suggested)
+- **main**: stable releases.
+- **dev**: integration branch.
+- **feature/***: for new features.
+- Conventional commits: `feat:`, `fix:`, `docs:`, `chore:`.
 
-# Troubleshooting
+---
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+## 🧪 Testing (Later)
+- Unit tests for utils/components (Jest/RTL).
+- E2E tests (Detox) for navigation flows.
 
-# Learn More
+---
 
-To learn more about React Native, take a look at the following resources:
+## 🔒 Security
+- Do not commit secrets or `.env`.
+- Use `.gitignore` to exclude build artifacts.
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+---
+
+## 📜 License
+Add a license if open-sourcing (e.g., MIT).
+
+---
+
+## 🚀 Roadmap
+- Add API client and data layer.
+- Implement state management (Context/Zustand/Redux).
+- CI setup (GitHub Actions).
+- Theming and accessibility polishing.

@@ -1,0 +1,1 @@
+import AsyncStorage from'@react-native-async-storage/async-storage';export const storage={get:async k=>JSON.parse(await AsyncStorage.getItem(k)),set:(k,v)=>AsyncStorage.setItem(k,JSON.stringify(v)),remove:k=>AsyncStorage.removeItem(k)};
