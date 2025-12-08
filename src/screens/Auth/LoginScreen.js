@@ -1,14 +1,13 @@
 
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import Button from '../../components/common/Button';
 import TextInput from '../../components/common/TextInput';
@@ -18,7 +17,6 @@ import { isEmail, isStrongPassword } from '../../utils/validators';
 export default function LoginScreen({onLoggedIn ,navigation}) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  // const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
@@ -39,12 +37,7 @@ const onSubmit = async () => {
   try {
     setSubmitting(true);
     await new Promise((r) => setTimeout(r, 700));
-
-    // Switch to AppStack by flipping the auth flag
     onLoggedIn?.();
-
-    // Optional: If you want an Alert, show it AFTER switching, but avoid blocking UX.
-    // Alert.alert('Success', 'Logged in successfully!');
   } catch (e) {
     setFormError(e?.message ?? 'Login failed. Please try again.');
   } finally {

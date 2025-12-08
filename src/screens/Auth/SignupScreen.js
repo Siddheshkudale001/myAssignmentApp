@@ -13,14 +13,11 @@ import {
 import Button from '../../components/common/Button';
 import TextInput from '../../components/common/TextInput';
 
-// If you already created utils/validators for Login, import from there.
-// For now, keep them local to this file or move to ../../utils/validators later.
 const isEmail = (v) => /\S+@\S+\.\S+/.test(v);
 const isStrongPassword = (v) => typeof v === 'string' && v.length >= 6;
 const isFullName = (v) => typeof v === 'string' && v.trim().split(/\s+/).length >= 2;
 const isMobileNumber = (v) => /^[0-9]{10}$/.test(v);
 
-// ✅ Import utilities
 import { globalStyles, layout, shadows, spacing, typography } from '../../utils';
 
 export default function SignupScreen({navigation}) {
@@ -52,9 +49,6 @@ export default function SignupScreen({navigation}) {
       // 🔒 Replace this with your real signup API call
       await new Promise((r) => setTimeout(r, 800));
       Alert.alert('Account created', 'You can now log in.', [{ text: 'OK' }]);
-
-      // Optional: clear form
-      // setFullName(''); setEmail(''); setPassword(''); setMobile('');
     } catch (e) {
       setFormError(e?.message ?? 'Sign up failed. Please try again.');
     } finally {

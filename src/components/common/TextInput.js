@@ -7,6 +7,7 @@ export default function TextInput({ label, error, style, ...props }) {
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <RNTextInput
         style={[styles.input, error && styles.errorBorder, style]}
+        placeholder={label}
         {...props}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -15,16 +16,38 @@ export default function TextInput({ label, error, style, ...props }) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { marginVertical: 8 },
-  label: { marginBottom: 4, fontWeight: '600' },
+  wrap: {
+    marginVertical: 10,
+  },
+  label: {
+    marginBottom: 6,
+    fontWeight: '600',
+    fontSize: 14,
+    color: '#333',
+  },
   input: {
     borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 8,
-    padding: 10,
-    // make the input stretch within a column:
+    borderColor: '#CCC',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    fontSize: 16,
+    color: '#222',
+    backgroundColor: '#FAFAFA',
     width: '100%',
+    // subtle shadow for depth
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
-  errorBorder: { borderColor: '#E53935' },
-  error: { color: '#E53935', marginTop: 4 },
+  errorBorder: {
+    borderColor: '#E53935',
+  },
+  error: {
+    color: '#E53935',
+    marginTop: 6,
+    fontSize: 13,
+  },
 });
