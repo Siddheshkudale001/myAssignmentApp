@@ -29,21 +29,26 @@ function AuthStack({ onSignedIn }) {
   );
 }
 
-function AppStack({ userName = 'Siddhesh' }) {
+function AppStack({ userName = 'Siddhesh' , onLogout }) {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }}
+      // initialRouteName="ProductDetail"  // 👈 start here
+    >
       <Stack.Screen name="Home" options={{ title: 'Home' }}>
         {(props) => <HomeScreen {...props} userName={userName} />}
       </Stack.Screen>
 
       <Stack.Screen name="ProductList" component={ProductListScreen} options={{ title: 'Products' }} />
-      <Stack.Screen name="ProductDetail" component={ProductDetailScreen} options={{ title: 'Details' }} />
+      <Stack.Screen
+        name="ProductDetail" component={ProductDetailScreen} options={{ title: 'Details' }} />
 
       <Stack.Screen name="Favorites" options={{ title: 'Favorites' }}>
         {(props) => <FavoritesScreen {...props} userName={userName} />}
       </Stack.Screen>
+     <Stack.Screen name="ProfileSettings">
+        {(props) => <ProfileSettingsScreen {...props} onLogout={onLogout} />}
+      </Stack.Screen>
 
-      <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} options={{ title: 'Profile & Settings' }} />
     </Stack.Navigator>
   );
 }
@@ -51,8 +56,9 @@ function AppStack({ userName = 'Siddhesh' }) {
 export default function RootNavigator() {
   // Local auth flag — replace with your real auth (token/context) later
   const [isSignedIn, setIsSignedIn] = useState(false);
+  // const [isSignedIn, setIsSignedIn] = useState(true);
 
   return isSignedIn
-    ? <AppStack userName="Siddhesh" />
+    ? <AppStack userName="Siddhesh" onLogout={() => setIsSignedIn(false)}/>
     : <AuthStack onSignedIn={() => setIsSignedIn(true)} />;
 }

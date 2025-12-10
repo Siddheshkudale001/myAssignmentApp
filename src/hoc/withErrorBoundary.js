@@ -1,1 +1,0 @@
-import React from'react';export default function withErrorBoundary(C){return class B extends React.Component{state={e:false};componentDidCatch(){this.setState({e:true});}render(){return this.state.e?null:<C {...this.props}/>}}}

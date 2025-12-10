@@ -1,36 +1,23 @@
-import React, { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
+  ActivityIndicator,
+  Dimensions,
   FlatList,
   Image,
+  StyleSheet,
+  Text,
   TouchableOpacity,
-  Dimensions,
+  View,
 } from 'react-native';
 
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AppHeader from '../../components/common/AppHeader';
 import MiniChart from '../../components/MiniChart';
-import { colors, spacing, radius, shadows, layout, typography } from '../../utils';
-import { formatINR } from '../../utils/format'; // reuse formatter we created earlier
+import { colors, layout, radius, shadows, spacing, typography } from '../../utils';
+import { formatINR } from '../../utils/format';
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-// ---- Static product ----
-const PRODUCT = {
-  id: 1,
-  title: 'Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops',
-  price: 109.95,
-  description:
-    'Your perfect pack for everyday use and walks in the forest. Stash your laptop (up to 15 inches) in the padded sleeve. Durable, comfortable, and versatile.',
-  category: "men's clothing",
-  images: [
-    'https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg',
-    'https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg',
-    'https://fakestoreapi.com/img/81fPKd-2AYL._AC_SL1500_.jpg',
-  ],
-  rating: { rate: 3.9, count: 120 },
-  priceTrend: [95, 99, 103, 100, 108, 110, 112, 109, 111, 115, 118, 120],
-};
 
 // Helpers
 const stars = (rate) => {
@@ -38,7 +25,13 @@ const stars = (rate) => {
   return '★'.repeat(filled) + '☆'.repeat(Math.max(0, 5 - filled));
 };
 
-export default function ProductDetailScreen() {
+export default function ProductDetailScreen({ route, navigation }) {
+  const { id } = route.params;
+  // const id = 5
+
+  const [item, setItem] = useState(null);
+  const [loading, setLoading] = useState(true);
+
   const [isFav, setIsFav] = useState(false);
   const [cartQty, setCartQty] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -54,30 +47,67 @@ export default function ProductDetailScreen() {
     }
   });
 
-  const priceText = useMemo(() => formatINR(PRODUCT.price), []);
+  // Fetch product by ID
+  useEffect(() => {
+    console.log("id==============",id)
+    const load = async () => {
+      try {
+        const res = await fetch(`https://fakestoreapi.com/products/${id}`);
+        const data = await res.json();
 
-  const handleAddToCart = () => setCartQty((q) => q + 1);
-  const handleToggleFav = () => setIsFav((f) => !f);
+        // convert single image → array of images
+        const newImages = [
+          data.image,
+          data.image,
+          data.image,
+        ];
+
+        setItem({
+          ...data,
+          images: newImages,
+          priceTrend: [95, 99, 103, 100, 108, 110, 112, 109], // Mock trend for now
+        });
+      } catch (e) {
+        console.log('Failed to load product:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [id]);
+
+  const priceText = useMemo(() => item ? formatINR(item.price) : '', [item]);
 
   const renderImage = ({ item }) => (
     <View style={[styles.imageSlide, { width: imageWidth }]}>
-      <Image source={{ uri: item }} style={styles.image} resizeMode="contain" onError={() => {}} />
+      <Image source={{ uri: item }} style={styles.image} resizeMode="contain" />
     </View>
   );
 
+  if (loading || !item) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
+    <SafeAreaView style={{ flex: 1 , backgroundColor: colors.background}} edges={['top']}>
+      <AppHeader title="Details" showBack />
     <View style={styles.container}>
       {/* Title */}
       <View style={styles.header}>
-        <Text style={styles.title} numberOfLines={2}>{PRODUCT.title}</Text>
-        <Text style={styles.category}>{PRODUCT.category}</Text>
+        <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+        <Text style={styles.category}>{item.category}</Text>
       </View>
 
       {/* Carousel */}
       <View style={styles.carousel}>
         <FlatList
           horizontal
-          data={PRODUCT.images}
+          data={item.images}
           renderItem={renderImage}
           keyExtractor={(uri, idx) => `${idx}-${uri}`}
           showsHorizontalScrollIndicator={false}
@@ -93,9 +123,9 @@ export default function ProductDetailScreen() {
             index,
           })}
         />
-        {/* Dots */}
+
         <View style={styles.dotsRow}>
-          {PRODUCT.images.map((_, i) => (
+          {item.images.map((_, i) => (
             <View key={i} style={[styles.dot, i === activeIndex && styles.dotActive]} />
           ))}
         </View>
@@ -106,23 +136,22 @@ export default function ProductDetailScreen() {
         <View style={{ flex: 1 }}>
           <Text style={styles.price}>{priceText}</Text>
           <Text style={styles.rating}>
-            {stars(PRODUCT.rating?.rate ?? 0)}{' '}
-            <Text style={styles.ratingCount}>({PRODUCT.rating?.count ?? 0})</Text>
+            {stars(item.rating?.rate ?? 0)}{' '}
+            <Text style={styles.ratingCount}>({item.rating?.count ?? 0})</Text>
           </Text>
         </View>
 
         <View style={styles.actions}>
           <TouchableOpacity
             style={[styles.favBtn, isFav && styles.favBtnActive]}
-            onPress={handleToggleFav}
-            activeOpacity={0.85}
+            onPress={() => setIsFav(!isFav)}
           >
             <Text style={[styles.favText, isFav && styles.favTextActive]}>
               {isFav ? '♥ Favorited' : '♡ Favorite'}
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.cartBtn} onPress={handleAddToCart} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.cartBtn} onPress={() => setCartQty(cartQty + 1)}>
             <Text style={styles.cartText}>Add to Cart</Text>
           </TouchableOpacity>
         </View>
@@ -131,76 +160,59 @@ export default function ProductDetailScreen() {
       {/* Description */}
       <View style={styles.section}>
         <Text style={typography.sectionTitle}>Description</Text>
-        <Text style={styles.descText}>{PRODUCT.description}</Text>
+        <Text style={styles.descText}>{item.description}</Text>
       </View>
 
       {/* Price Trend */}
       <View style={styles.section}>
         <Text style={typography.sectionTitle}>Price Trend</Text>
-        <MiniChart data={PRODUCT.priceTrend} />
+        <MiniChart data={item.priceTrend} />
         <View style={styles.chartLegend}>
           <Text style={styles.legendText}>Last 12 periods</Text>
           <Text style={styles.legendTextMuted}>
-            High: {formatINR(Math.max(...PRODUCT.priceTrend))} • Low: {formatINR(Math.min(...PRODUCT.priceTrend))}
+            High: {formatINR(Math.max(...item.priceTrend))} • Low: {formatINR(Math.min(...item.priceTrend))}
           </Text>
         </View>
       </View>
 
-      {/* Cart summary (mock) */}
+      {/* Cart summary */}
       <View style={styles.cartSummary}>
         <Text style={styles.cartSummaryText}>
           Cart items added: <Text style={{ fontWeight: '700' }}>{cartQty}</Text>
         </Text>
       </View>
     </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    ...layout.screen,
-  },
+  container: { ...layout.screen },
 
   header: {
-    paddingHorizontal: spacing['2xl'], // 20
-    paddingTop: spacing['3xl'],        // 24
-    paddingBottom: spacing.xl,         // 16 (your original had 12; adjust here if needed)
+    paddingHorizontal: spacing['2xl'],
+    paddingTop: spacing['3xl'],
+    paddingBottom: spacing.xl,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  category: {
-    marginTop: spacing.xs,             // 4
-    fontSize: 13,
-    color: colors.textMuted,
-  },
+  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  category: { marginTop: spacing.xs, fontSize: 13, color: colors.textMuted },
 
   carousel: {
     backgroundColor: colors.card,
-    borderRadius: radius.lg,           // 14
-    marginHorizontal: spacing.xl,      // 16
-    paddingVertical: spacing.md,       // 8
+    borderRadius: radius.lg,
+    marginHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
     ...shadows.card,
   },
-  imageSlide: {
-    height: 240,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  image: {
-    width: SCREEN_WIDTH - spacing.xl * 2, // SCREEN_WIDTH - 32
-    height: 220,
-  },
+  imageSlide: { height: 240, justifyContent: 'center', alignItems: 'center' },
+  image: { width: SCREEN_WIDTH - spacing.xl * 2, height: 220 },
 
-  // Dots
   dotsRow: {
-    marginTop: spacing.sm,             // 6
-    marginBottom: spacing.md,          // 8
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: spacing.sm,                   // 6 (RN >= 0.71)
+    gap: spacing.sm,
   },
   dot: {
     width: 6,
@@ -215,103 +227,61 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
 
-  // Meta row
   metaRow: {
-    marginTop: spacing.xl,             // 16
-    paddingHorizontal: spacing['2xl'], // 20
+    marginTop: spacing.xl,
+    paddingHorizontal: spacing['2xl'],
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xl,                   // 16
-  },
-  price: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  rating: {
-    marginTop: spacing.xs,             // 4
-    fontSize: 14,
-    color: colors.text,
-  },
-  ratingCount: {
-    fontSize: 13,
-    color: colors.textMuted,
+    gap: spacing.xl,
   },
 
-  // Actions (Favorite & Add to Cart)
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,                   // 8
-  },
+  price: { fontSize: 20, fontWeight: '700', color: colors.text },
+  rating: { marginTop: spacing.xs, fontSize: 14, color: colors.text },
+  ratingCount: { fontSize: 13, color: colors.textMuted },
+
+  actions: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   favBtn: {
-    paddingHorizontal: spacing.lg,     // 12
-    paddingVertical: spacing.sm,       // 6
-    borderRadius: radius.md,           // 10
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.card,
   },
   favBtnActive: {
     borderColor: colors.primary,
-    backgroundColor: '#E8F0FE',       // light primary tint for active
+    backgroundColor: '#E8F0FE',
   },
-  favText: {
-    color: colors.text,
-    fontWeight: '600',
-  },
-  favTextActive: {
-    color: colors.primary,
-  },
+  favText: { color: colors.text, fontWeight: '600' },
+  favTextActive: { color: colors.primary },
   cartBtn: {
-    paddingHorizontal: spacing.xl,     // 16
-    paddingVertical: spacing.sm,       // 6
-    borderRadius: radius.md,           // 10
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
     backgroundColor: colors.primary,
   },
-  cartText: {
-    color: colors.card,
-    fontWeight: '700',
-  },
+  cartText: { color: colors.card, fontWeight: '700' },
 
-  // Section blocks
-  section: {
-    marginTop: spacing['2xl'],         // 20
-    paddingHorizontal: spacing['2xl'], // 20
-  },
-  descText: {
-    marginTop: spacing.sm,             // 6
-    ...typography.body,
-    color: colors.text,
-  },
+  section: { marginTop: spacing['2xl'], paddingHorizontal: spacing['2xl'] },
+  descText: { marginTop: spacing.sm, ...typography.body, color: colors.text },
 
-  // Chart legend
   chartLegend: {
-    marginTop: spacing.sm,             // 6
+    marginTop: spacing.sm,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  legendText: {
-    ...typography.caption,
-    color: colors.text,
-  },
-  legendTextMuted: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
+  legendText: { ...typography.caption, color: colors.text },
+  legendTextMuted: { ...typography.caption, color: colors.textMuted },
 
-  // Cart summary
   cartSummary: {
-    marginTop: spacing['2xl'],         // 20
-    marginHorizontal: spacing.xl,      // 16
-    padding: spacing.xl,               // 16
+    marginTop: spacing['2xl'],
+    marginHorizontal: spacing.xl,
+    padding: spacing.xl,
     backgroundColor: colors.card,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  cartSummaryText: {
-    ...typography.body,
-  },
+  cartSummaryText: { ...typography.body },
 });

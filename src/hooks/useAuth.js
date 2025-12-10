@@ -1,1 +1,0 @@
-import{useSelector,useDispatch}from'react-redux';import{login,logout}from'../state/slices/authSlice';export function useAuth(){const s=useSelector(st=>st.auth);const d=useDispatch();return{...s,login:()=>d(login()),logout:()=>d(logout())}}

@@ -1,10 +1,19 @@
-import { auth, db } from "../firebase";
+// import { app } from "./config";
+// import { getAuth } from "firebase/auth";
+
+// export const auth = getAuth(app);
+// src/core/firebase/auth.js
+import { app } from "./config";
 import {
+  getAuth,
   createUserWithEmailAndPassword,
   updateProfile,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
+
+export const auth = getAuth(app);
+export const db = getFirestore(app);
 
 // -------------------- SIGN UP --------------------
 export async function signUpWithEmail({ name, email, password, phone }) {

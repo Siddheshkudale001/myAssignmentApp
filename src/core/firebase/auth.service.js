@@ -1,4 +1,4 @@
-import { auth, db } from "../firebase";
+import { auth, db } from "./index";
 import {
   createUserWithEmailAndPassword,
   updateProfile,
@@ -6,7 +6,6 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
-// -------------------- SIGN UP --------------------
 export async function signUpWithEmail({ name, email, password, phone }) {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
 
@@ -28,7 +27,6 @@ export async function signUpWithEmail({ name, email, password, phone }) {
   };
 }
 
-// -------------------- SIGN IN --------------------
 export async function signInWithEmail(email, password) {
   const cred = await signInWithEmailAndPassword(auth, email, password);
 
