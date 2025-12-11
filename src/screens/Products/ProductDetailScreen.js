@@ -1,112 +1,273 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { fetchProducts } from '../../store/slices/productsSlice';
+import { useDispatch, useSelector } from 'react-redux';
 import { toggleFavorite } from '../../store/slices/favoritesSlice';
 
+import AppHeader from '../../components/common/AppHeader';
+import MiniChart from '../../components/MiniChart';
+import { colors, layout, radius, shadows, spacing, typography } from '../../utils';
+import { formatINR } from '../../utils/format';
 
-export default function ProductDetailScreen() {
-  const route = useRoute();
-  const navigation = useNavigation();
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Helpers
+const stars = (rate = 0) => {
+  const filled = Math.round(rate);
+  return '★'.repeat(filled) + '☆'.repeat(5 - filled);
+};
+
+// Generate random fluctuating chart trend
+const generateRandomTrend = () => {
+  let base = 100;
+  return Array.from({ length: 12 }).map(() => {
+    const change = (Math.random() * 10 - 5); // -5 to +5 range
+    base = Math.max(50, base + change);
+    return Math.round(base);
+  });
+};
+
+export default function ProductDetailScreen({ route }) {
+  const { id } = route.params;
+
   const dispatch = useDispatch();
+  const favIds = useSelector((s) => s.favorites.ids);
 
-  const { id } = route.params; // productId coming from ProductList → navigate('ProductDetail', { id })
+  const isFav = favIds.includes(id);
 
-  const { list, status } = useSelector((s) => s.products);
-  const favoriteIds = useSelector((s) => s.favorites.ids);
+  const [item, setItem] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  // find product
-  const product = list.find((p) => p.id === id);
-  const isFav = favoriteIds.includes(id);
+  const carouselWidth = SCREEN_WIDTH;
+  const imageWidth = SCREEN_WIDTH;
 
-  // auto fetch if not loaded
-  useEffect(() => {
-    if (status === 'idle') {
-      dispatch(fetchProducts());
+  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 });
+  const onViewableItemsChanged = useRef(({ viewableItems }) => {
+    if (viewableItems?.length) {
+      const idx = viewableItems[0]?.index ?? 0;
+      setActiveIndex(idx);
     }
-  }, [status]);
+  });
 
-  // loading states for product load
-  if (status === 'loading' || !product) {
+  // Fetch product by ID
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch(`https://fakestoreapi.com/products/${id}`);
+        const data = await res.json();
+
+        const imagesArr = [data.image, data.image, data.image];
+
+        setItem({
+          ...data,
+          images: imagesArr,
+          priceTrend: generateRandomTrend(),
+        });
+      } catch (e) {
+        console.log('Failed to load product:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [id]);
+
+  const priceText = useMemo(() => (item ? formatINR(item.price) : ''), [item]);
+
+  const renderImage = ({ item }) => (
+    <View style={[styles.imageSlide, { width: imageWidth }]}>
+      <Image
+        source={{ uri: item }}
+        style={styles.image}
+        resizeMode="contain"
+      />
+    </View>
+  );
+
+  if (loading || !item) {
     return (
-      <View style={styles.loaderWrap}>
-        <ActivityIndicator size="large" />
-        <Text>Loading product...</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
-  // header → fav button + fav screen button
-  React.useLayoutEffect(() => {
-    navigation.setOptions({
-      headerRight: () => (
-        <View style={{ flexDirection: 'row' }}>
-          {/* Go to Favorites */}
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Favorites')}
-            style={{ marginRight: 16 }}
-          >
-            <Text style={{ fontSize: 22 }}>💛</Text>
-          </TouchableOpacity>
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+      <AppHeader title="Details" showBack />
 
-          {/* Toggle Favorite */}
+      <View style={styles.container}>
+        {/* Title */}
+        <View style={styles.header}>
+          <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+          <Text style={styles.category}>{item.category}</Text>
+        </View>
+
+        {/* Carousel */}
+        <View style={styles.carousel}>
+          <FlatList
+            horizontal
+            data={item.images}
+            renderItem={renderImage}
+            keyExtractor={(uri, idx) => `${idx}-${uri}`}
+            showsHorizontalScrollIndicator={false}
+            pagingEnabled
+            snapToAlignment="center"
+            snapToInterval={imageWidth}
+            decelerationRate="fast"
+            onViewableItemsChanged={onViewableItemsChanged.current}
+            viewabilityConfig={viewabilityConfig.current}
+            getItemLayout={(_, index) => ({
+              length: imageWidth,
+              offset: imageWidth * index,
+              index,
+            })}
+          />
+
+          <View style={styles.dotsRow}>
+            {item.images.map((_, i) => (
+              <View
+                key={i}
+                style={[styles.dot, i === activeIndex && styles.dotActive]}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* Price, Rating, Favorite Toggle */}
+        <View style={styles.metaRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.price}>{priceText}</Text>
+            <Text style={styles.rating}>
+              {stars(item.rating?.rate)}{' '}
+              <Text style={styles.ratingCount}>({item.rating?.count ?? 0})</Text>
+            </Text>
+          </View>
+
+          {/* Favorite Button */}
           <TouchableOpacity
+            style={[styles.favBtn, isFav && styles.favBtnActive]}
             onPress={() => dispatch(toggleFavorite(id))}
-            style={{ marginRight: 16 }}
           >
-            <Text style={{ fontSize: 22 }}>
-              {isFav ? '❤️' : '🤍'}
+            <Text style={[styles.favText, isFav && styles.favTextActive]}>
+              {isFav ? '♥ Favorited' : '♡ Favorite'}
             </Text>
           </TouchableOpacity>
         </View>
-      ),
-    });
-  }, [navigation, isFav]);
 
-  return (
-    <View style={styles.container}>
-      <Image source={{ uri: product.image }} style={styles.img} />
+        {/* Description */}
+        <View style={styles.section}>
+          <Text style={typography.sectionTitle}>Description</Text>
+          <Text style={styles.descText}>{item.description}</Text>
+        </View>
 
-      <Text style={styles.title}>{product.title}</Text>
+        {/* Price Trend Chart */}
+        <View style={styles.section}>
+          <Text style={typography.sectionTitle}>Price Trend</Text>
+          <MiniChart data={item.priceTrend} />
 
-      <Text style={styles.price}>${product.price}</Text>
-
-      <Text style={styles.desc}>{product.description}</Text>
-    </View>
+          <View style={styles.chartLegend}>
+            <Text style={styles.legendText}>Last 12 periods</Text>
+            <Text style={styles.legendTextMuted}>
+              High: {formatINR(Math.max(...item.priceTrend))} • Low:{' '}
+              {formatINR(Math.min(...item.priceTrend))}
+            </Text>
+          </View>
+        </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
+  container: { ...layout.screen },
+
+  header: {
+    paddingHorizontal: spacing['2xl'],
+    paddingTop: spacing['3xl'],
+    paddingBottom: spacing.xl,
   },
-  img: {
-    width: '100%',
-    height: 250,
-    resizeMode: 'contain',
-    marginBottom: 20,
+  title: { fontSize: 20, fontWeight: '700', color: colors.text },
+  category: { marginTop: spacing.xs, fontSize: 13, color: colors.textMuted },
+
+  carousel: {
+    backgroundColor: colors.card,
+    borderRadius: radius.lg,
+    marginHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    ...shadows.card,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 10,
-  },
-  price: {
-    fontSize: 18,
-    marginBottom: 10,
-    fontWeight: '500',
-    color: '#333',
-  },
-  desc: {
-    fontSize: 15,
-    lineHeight: 20,
-    color: '#444',
-  },
-  loaderWrap: {
-    flex: 1,
+  imageSlide: { height: 240, justifyContent: 'center', alignItems: 'center' },
+  image: { width: SCREEN_WIDTH - spacing.xl * 2, height: 220 },
+
+  dotsRow: {
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+    flexDirection: 'row',
     justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: radius.pill,
+    backgroundColor: colors.border,
+  },
+  dotActive: {
+    width: 16,
+    height: 6,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+  },
+
+  metaRow: {
+    marginTop: spacing.xl,
+    paddingHorizontal: spacing['2xl'],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xl,
+  },
+
+  price: { fontSize: 20, fontWeight: '700', color: colors.text },
+  rating: { marginTop: spacing.xs, fontSize: 14, color: colors.text },
+  ratingCount: { fontSize: 13, color: colors.textMuted },
+
+  favBtn: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  favBtnActive: {
+    borderColor: colors.primary,
+    backgroundColor: '#E8F0FE',
+  },
+  favText: { color: colors.text, fontWeight: '600' },
+  favTextActive: { color: colors.primary },
+
+  section: { marginTop: spacing['2xl'], paddingHorizontal: spacing['2xl'] },
+  descText: { marginTop: spacing.sm, ...typography.body, color: colors.text },
+
+  chartLegend: {
+    marginTop: spacing.sm,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
+  legendText: { ...typography.caption, color: colors.text },
+  legendTextMuted: { ...typography.caption, color: colors.textMuted },
 });

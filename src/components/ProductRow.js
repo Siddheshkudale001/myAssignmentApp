@@ -48,6 +48,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,           // 8
+    marginBottom: 10,
   },
   thumbWrap: {
     width: THUMB_SIZE,

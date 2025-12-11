@@ -29,25 +29,18 @@ import { toggleFavorite } from '../../store/slices/favoritesSlice';
 import { fetchProducts } from '../../store/slices/productsSlice';
 
 import { formatINR } from '../../utils/format';
+import { showToast } from '../../utils/toast';
 
-// Helpers
-const getCategories = (list) => {
-  const set = new Set(list.map((p) => p.category));
-  return ['All', ...Array.from(set)];
-};
 
 export default function ProductListScreen({ userName = 'Siddhesh', navigation }) {
   const dispatch = useDispatch();
 
-  // ----- REDUX PRODUCTS -----
-  // const { list: products, status, error } = useSelector((s) => s.products);
   const productState = useSelector((s) => s?.products || {});
   const products = productState.list || [];
   const status = productState.status || 'idle';
   const error = productState.error || null;
   const favoriteIds = useSelector((s) => s.favorites.ids);
 
-  // Local UI states
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [recentlyViewed, setRecentlyViewed] = useState([]);
@@ -68,47 +61,82 @@ export default function ProductListScreen({ userName = 'Siddhesh', navigation })
     dispatch(fetchProducts());
   };
 
+  const getDiscount = () => {
+  const values = [0, 10, 20, 30, 40, 50];
+  return values[Math.floor(Math.random() * values.length)];
+};
+
   // ==============================
   //   FIX: NO HOOKS AFTER RETURNS
   // ==============================
 
-  if (status === 'loading') {
-    return (
-      <SafeAreaView style={styles.centerPage}>
-        <Text style={{ fontSize: 16 }}>Loading products…</Text>
-      </SafeAreaView>
-    );
-  }
+  // if (status === 'loading') {
+  //   return (
+  //     <SafeAreaView style={styles.centerPage}>
+  //       <Text style={{ fontSize: 16 }}>Loading products…</Text>
+  //     </SafeAreaView>
+  //   );
+  // }
 
-  if (status === 'failed') {
-    return (
-      <SafeAreaView style={styles.centerPage}>
-        <Text style={{ fontSize: 16, color: 'red' }}>
-          {error || 'Error loading products'}
-        </Text>
-        <TouchableOpacity onPress={() => dispatch(fetchProducts())} style={{ marginTop: 20 }}>
-          <Text style={{ color: colors.primary, fontWeight: '700' }}>Retry</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
+  // if (status === 'failed') {
+  //   return (
+  //     <SafeAreaView style={styles.centerPage}>
+  //       <Text style={{ fontSize: 16, color: 'red' }}>
+  //         {error || 'Error loading products'}
+  //       </Text>
+  //       <TouchableOpacity onPress={() => dispatch(fetchProducts())} style={{ marginTop: 20 }}>
+  //         <Text style={{ color: colors.primary, fontWeight: '700' }}>Retry</Text>
+  //       </TouchableOpacity>
+  //     </SafeAreaView>
+  //   );
+  // }
+  if (status === 'loading') console.log("loading");
+  if (status === 'failed') console.log("error");
 
-  // ======== FILTERING ========
+
   const filtered = useMemo(() => {
-    const s = search.trim().toLowerCase();
-    return products.filter((p) => {
-      const matchesSearch = s.length === 0 || p.title.toLowerCase().includes(s);
-      const matchesCategory = category === 'All' || p.category === category;
-      return matchesSearch && matchesCategory;
-    });
+    try {
+      const s = (search || "").trim().toLowerCase();
+
+      return products.filter((p) => {
+        const title = p.title?.toLowerCase?.() ?? "";
+        const cat = p.category ?? "";
+
+        const matchesSearch = s.length === 0 || title.includes(s);
+        const matchesCategory = category === "All" || cat === category;
+
+        return matchesSearch && matchesCategory;
+      });
+    } catch (err) {
+      console.warn("🔥 filter error:", err);
+      return products;
+    }
   }, [products, search, category]);
 
-  // ======== PAGINATION ========
   const visibleData = useMemo(() => {
-    return filtered.slice(0, page * PAGE_SIZE);
+    try {
+      return filtered.slice(0, page * PAGE_SIZE);
+    } catch (err) {
+      console.warn("🔥 pagination error:", err);
+      return filtered;
+    }
   }, [filtered, page]);
 
-  const categories = useMemo(() => getCategories(products), [products]);
+  const categories = useMemo(() => {
+    try {
+      const set = new Set(products.map((p) => p.category).filter(Boolean));
+      return ["All", ...Array.from(set)];
+    } catch (err) {
+      console.warn("🔥 category error:", err);
+      return ["All"];
+    }
+  }, [products]);
+
+  //   const filtered = products;
+  // const visibleData = filtered;
+  // const categories = ["All"];
+  //temp solution if crash happens
+
 
   const onEndReached = () => {
     if (visibleData.length < filtered.length) {
@@ -140,10 +168,13 @@ export default function ProductListScreen({ userName = 'Siddhesh', navigation })
 
   const onLongPressItem = (item) => {
     dispatch(toggleFavorite(item.id));
+    showToast(`${item.title} added to favorites ❤️`);
   };
 
   const renderItem = ({ item }) => {
     const isFav = favoriteIds.includes(item.id);
+      const discount = getDiscount();
+
     return (
       <ProductRow
         item={item}
@@ -159,9 +190,9 @@ export default function ProductListScreen({ userName = 'Siddhesh', navigation })
     <>
       <View style={styles.header}>
         <Text style={typography.greet}>
-          Hello, <Text style={styles.greetName}>{userName}</Text> 👋
+          Browse the catalog <Text style={styles.greetName}>here</Text> 👋
         </Text>
-        <Text style={styles.subGreet}>Browse the catalog</Text>
+        <Text style={styles.subGreet}>You can search or choose categories</Text>
       </View>
 
       <FlatList

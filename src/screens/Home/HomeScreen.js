@@ -7,7 +7,8 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppHeader from '../../components/common/AppHeader';
@@ -72,8 +73,8 @@ export default function HomeScreen({ navigation }) {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1 , backgroundColor: colors.background}} edges={['top']}>
-      
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+
       <AppHeader title="Home" showProfile />
 
       <View style={styles.container}>
@@ -85,19 +86,29 @@ export default function HomeScreen({ navigation }) {
           </Text>
           <Text style={styles.subGreet}>Check out these new arrivals</Text>
 
-          {/* Material Search */}
-          <View style={styles.searchBox}>
-            <TextInput
-              placeholder="Search products"
-              placeholderTextColor="#999"
-              style={styles.searchInput}
-            />
-            <Text style={styles.searchIcon}>🔍</Text>
-          </View>
         </View>
+        {/* Banner */}
+        <View style={styles.bannerWrapper}>
+          <Image
+            source={require('../../assets/banner.jpg')}  // put your downloaded image here
+            style={styles.banner}
+            resizeMode="cover"
+          />
+        </View>
+        {/* Virat Ads */}
+        <View style={styles.adBox}>
+          <Image
+            source={require('../../assets/Virat.jpg')}
+            style={styles.adImage}
+            resizeMode="cover"
+          />
+        </View>
+
+
 
         {/* Section Title */}
         <Text style={styles.sectionTitle}>Trending Products</Text>
+
 
         {loading && <ActivityIndicator size="large" style={{ marginTop: 40 }} />}
 
@@ -207,4 +218,28 @@ const styles = StyleSheet.create({
     fontSize: 26,
     color: 'white',
   },
+  bannerWrapper: {
+    width: '100%',
+    paddingHorizontal: spacing['2xl'],
+    marginTop: 10,
+  },
+  banner: {
+    width: '100%',
+    height: 150,
+    borderRadius: 16,
+    backgroundColor: '#ddd',
+  },
+
+  adBox: {
+    width: '100%',
+    paddingHorizontal: spacing['2xl'],
+    marginTop: 16,
+  },
+  adImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: 14,
+    backgroundColor: '#eee',
+  },
+
 });
