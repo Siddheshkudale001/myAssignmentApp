@@ -1,4 +1,3 @@
-
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert,
@@ -13,6 +12,7 @@ import {
 
 import CategoryChip from '../../components/CategoryChip';
 import ProductRow from '../../components/ProductRow';
+import AppHeader from '../../components/common/AppHeader';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -24,53 +24,76 @@ import {
   typography
 } from '../../utils';
 
-import AppHeader from '../../components/common/AppHeader';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleFavorite } from '../../store/slices/favoritesSlice';
+import { fetchProducts } from '../../store/slices/productsSlice';
+
 import { formatINR } from '../../utils/format';
 
-// helpers
+// Helpers
 const getCategories = (list) => {
   const set = new Set(list.map((p) => p.category));
   return ['All', ...Array.from(set)];
 };
 
 export default function ProductListScreen({ userName = 'Siddhesh', navigation }) {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const dispatch = useDispatch();
 
+  // ----- REDUX PRODUCTS -----
+  // const { list: products, status, error } = useSelector((s) => s.products);
+  const productState = useSelector((s) => s?.products || {});
+  const products = productState.list || [];
+  const status = productState.status || 'idle';
+  const error = productState.error || null;
+  const favoriteIds = useSelector((s) => s.favorites.ids);
+
+  // Local UI states
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
-  const [favorites, setFavorites] = useState(new Set());
   const [recentlyViewed, setRecentlyViewed] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
 
   // Pagination
   const PAGE_SIZE = 4;
   const [page, setPage] = useState(1);
 
-  // ===== FETCH PRODUCTS FROM API =====
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const res = await fetch('https://fakestoreapi.com/products');
-      const data = await res.json();
-
-      setProducts(data);
-      setPage(1);
-    } catch (e) {
-      setError('Could not load products');
-    } finally {
-      setLoading(false);
+  // Auto-fetch on first load
+  useEffect(() => {
+    if (status === 'idle') {
+      dispatch(fetchProducts());
     }
+  }, [status, dispatch]);
+
+  // Pull-to-refresh
+  const onRefresh = () => {
+    dispatch(fetchProducts());
   };
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
+  // ==============================
+  //   FIX: NO HOOKS AFTER RETURNS
+  // ==============================
 
-  // ======== FILTER + PAGINATION ========
+  if (status === 'loading') {
+    return (
+      <SafeAreaView style={styles.centerPage}>
+        <Text style={{ fontSize: 16 }}>Loading products…</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (status === 'failed') {
+    return (
+      <SafeAreaView style={styles.centerPage}>
+        <Text style={{ fontSize: 16, color: 'red' }}>
+          {error || 'Error loading products'}
+        </Text>
+        <TouchableOpacity onPress={() => dispatch(fetchProducts())} style={{ marginTop: 20 }}>
+          <Text style={{ color: colors.primary, fontWeight: '700' }}>Retry</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  // ======== FILTERING ========
   const filtered = useMemo(() => {
     const s = search.trim().toLowerCase();
     return products.filter((p) => {
@@ -80,6 +103,7 @@ export default function ProductListScreen({ userName = 'Siddhesh', navigation })
     });
   }, [products, search, category]);
 
+  // ======== PAGINATION ========
   const visibleData = useMemo(() => {
     return filtered.slice(0, page * PAGE_SIZE);
   }, [filtered, page]);
@@ -92,13 +116,7 @@ export default function ProductListScreen({ userName = 'Siddhesh', navigation })
     }
   };
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadProducts();
-    setRefreshing(false);
-  };
-
-
+  // ======== EVENTS ========
   const onTapItem = (item) => {
     // Save recently viewed
     setRecentlyViewed((prev) => {
@@ -115,25 +133,17 @@ export default function ProductListScreen({ userName = 'Siddhesh', navigation })
           text: "View Details",
           onPress: () => navigation.navigate("ProductDetail", { id: item.id })
         },
-        {
-          text: "Cancel",
-          style: "cancel"
-        }
+        { text: "Cancel", style: "cancel" }
       ]
     );
   };
 
-
   const onLongPressItem = (item) => {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      next.has(item.id) ? next.delete(item.id) : next.add(item.id);
-      return next;
-    });
+    dispatch(toggleFavorite(item.id));
   };
 
   const renderItem = ({ item }) => {
-    const isFav = favorites.has(item.id);
+    const isFav = favoriteIds.includes(item.id);
     return (
       <ProductRow
         item={item}
@@ -144,19 +154,15 @@ export default function ProductListScreen({ userName = 'Siddhesh', navigation })
     );
   };
 
-  // ======== HEADER ========
+  // ======== HEADER COMPONENT ========
   const ListHeader = (
     <>
-      {/* Greeting */}
       <View style={styles.header}>
         <Text style={typography.greet}>
           Hello, <Text style={styles.greetName}>{userName}</Text> 👋
         </Text>
         <Text style={styles.subGreet}>Browse the catalog</Text>
       </View>
-
-
-
 
       <FlatList
         horizontal
@@ -176,7 +182,6 @@ export default function ProductListScreen({ userName = 'Siddhesh', navigation })
         )}
       />
 
-      {/* Recently viewed */}
       {recentlyViewed.length > 0 && (
         <View style={styles.recentWrap}>
           <Text style={typography.sectionTitle}>Recently viewed</Text>
@@ -206,7 +211,10 @@ export default function ProductListScreen({ userName = 'Siddhesh', navigation })
   const ListFooter = (
     <View style={styles.footer}>
       {visibleData.length < filtered.length ? (
-        <TouchableOpacity style={styles.loadMoreBtn} onPress={() => setPage((p) => p + 1)}>
+        <TouchableOpacity
+          style={styles.loadMoreBtn}
+          onPress={() => setPage((p) => p + 1)}
+        >
           <Text style={styles.loadMoreText}>Load more</Text>
         </TouchableOpacity>
       ) : (
@@ -215,8 +223,9 @@ export default function ProductListScreen({ userName = 'Siddhesh', navigation })
     </View>
   );
 
+  // ======== MAIN RENDER ========
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <AppHeader
         title="Products"
         showBack
@@ -236,7 +245,7 @@ export default function ProductListScreen({ userName = 'Siddhesh', navigation })
         ListHeaderComponent={ListHeader}
         ListFooterComponent={ListFooter}
         contentContainerStyle={globalStyles.listContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={status === 'loading'} onRefresh={onRefresh} />}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.3}
       />
@@ -248,6 +257,7 @@ const RECENT = 60;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  centerPage: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   header: {
     paddingHorizontal: spacing.xl,
@@ -256,11 +266,6 @@ const styles = StyleSheet.create({
   },
   greetName: { color: colors.primary },
   subGreet: { marginTop: spacing.sm, ...typography.subtitle },
-
-  searchWrap: {
-    paddingHorizontal: spacing.xl,
-    marginBottom: spacing.xl,
-  },
 
   chipsContainer: {
     paddingHorizontal: spacing.xl,
@@ -295,31 +300,4 @@ const styles = StyleSheet.create({
   },
   loadMoreText: { color: 'white', fontWeight: '700' },
   footerEnd: { color: colors.textMuted, ...typography.caption },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginHorizontal: 20,
-    marginTop: 16,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 }
-  },
-
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#333',
-  },
-
-  searchIcon: {
-    fontSize: 20,
-    marginLeft: 8,
-  },
-
 });
