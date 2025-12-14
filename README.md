@@ -1,125 +1,173 @@
-# myAssignmentApp
+# 📱 React Native myAssignmentApp
 
-A modular, scalable mobile application (initial phase) with a clean folder structure for components, screens, navigation, and UI designs. This README will be updated as the project evolves.
-
----
-
-## 🏗 Architecture Overview
-
-**Layered, feature-first structure**:
-
-- **App Shell**: Entry point, providers (theme, navigation), global configuration.
-- **Navigation**: Centralized route definitions using React Navigation (stack/tab), screen registration, deep linking config.
-- **Screens**: Page-level containers that orchestrate UI and business logic. Each screen composes components and calls services.
-- **Components**: Reusable, stateless UI building blocks (buttons, cards, inputs).
-- **Design System**: Theme tokens (colors, spacing, typography), common styles, and shared assets.
-- **Services / APIs** *(optional at this stage)*: Network calls and data access abstraction.
-- **Utils**: Pure helper functions, validators, formatters.
-
-> Goal: Keep presentation (UI) and orchestration (navigation/state) separate from data access, ensuring testability and maintainability.
+A modern React Native CLI application featuring Firebase Authentication, Redux Toolkit state management, clean navigation flow, and scalable architecture. Built with production-ready patterns and a focus on performance, maintainability, and real-world practices.
 
 ---
 
-## 🛠️ Setup Instructions
+## 🧠 Architecture Overview
+
+This app follows a **Firebase-driven auth architecture** where Firebase Authentication is the single source of truth for user state.
+
+### Key Principles
+
+* **Redux Toolkit for global state** (liked / favorite products)
+* **Firebase Auth = source of truth** for login/session
+* **Navigation reacts to auth state** (not the other way around)
+* **Screens stay dumb, logic stays centralized**
+* **Firebase Auth = source of truth** for login/session
+* **No manual session persistence** (Firebase handles persistence via AsyncStorage)
+* **Navigation reacts to auth state** (not the other way around)
+* **Screens stay dumb, logic stays centralized**
+
+### App Flow (High Level)
+
+1. App boots
+2. Firebase restores auth state automatically
+3. `onAuthStateChanged` emits user / null
+4. RootNavigator switches between:
+
+   * AuthFlow (Login / Signup)
+   * Main App Screens:
+
+     * Home
+     * Product List
+     * Favorites
+     * Profile
+
+This eliminates race conditions, stale state, and reload hacks.
+
+---
+
+## ⚙️ Setup Instructions
 
 ### Prerequisites
-- Node.js >= 18
-- npm or yarn
-- React Native CLI (if this is a RN app) and platform SDKs (Android Studio / Xcode)
-- Git installed
 
-### Install & Run
+* Node.js (>= 18)
+* Yarn or npm
+* Android Studio / Xcode
+* React Native CLI environment
+
+### Installation
+
 ```bash
 # install dependencies
 npm install
-# or
-yarn
+
+# iOS only
+cd ios && pod install && cd ..
 
 # start metro
 npm start
-# run platforms (adjust as needed)
+
+# run app
 npm run android
 npm run ios
 ```
 
-### Environment Variables (Optional)
-Create a `.env` file for secrets/tokens when APIs are added later (never commit secrets).
+### Firebase Setup
 
----
+1. Create a Firebase project
+2. Enable **Email/Password Authentication**
+3. Add Android & iOS apps in Firebase console
+4. Download:
 
-## 🌐 APIs Used
+   * `google-services.json`
+   * `GoogleService-Info.plist`
+5. Place them in correct native folders
 
-Currently **none** (initial phase). This section will list:
-- Base URL(s)
-- Endpoints & request/response examples
-- Auth mechanisms (e.g., OAuth, API keys)
-- Error handling and retry strategy
+Firebase Auth is initialized with persistent storage:
 
----
-
-## 📁 Folder Structure Explanation
-
-A typical structure (adjusted to your current folders):
-
-```
-myAssignmentApp/
-├─ src/
-│  ├─ components/        # Reusable UI components
-│  │  ├─ Button/
-│  │  └─ Card/
-│  ├─ screens/           # Screen containers
-│  │  ├─ HomeScreen.tsx
-│  │  └─ DetailsScreen.tsx
-│  ├─ navigation/        # React Navigation setup
-│  │  ├─ AppNavigator.tsx
-│  │  └─ routes.ts
-│  ├─ designs/           # Theme, styles, assets
-│  │  ├─ theme.ts
-│  │  └─ typography.ts
-│  ├─ utils/             # Helpers & formatters
-│  ├─ services/          # API clients (future)
-│  ├─ hooks/             # Custom hooks
-│  └─ index.tsx          # App entry
-├─ .gitignore
-├─ package.json
-├─ README.md
-└─ tsconfig.json         # if TypeScript
+```js
+initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage),
+});
 ```
 
-**Notes**
-- Co-locate component-specific styles and tests within their folders.
-- Use `index.ts` barrels for clean imports.
-- Keep navigation definitions centralized.
+---
+
+## 🔌 APIs Used
+
+### Firebase
+
+* **Firebase Authentication**
+
+  * Email/Password login & signup
+  * Persistent auth state
+  * Profile updates (`updateProfile`, `updateEmail`)
+
+### External APIs
+
+* **Fake Store API**
+
+  * Product listing, categories, and product details
+  * Used for global search and category-based filtering
+  * `https://fakestoreapi.com/products`
+
+### State Management
+
+* **Redux Toolkit**
+
+  * Manages liked / favorite products globally
+  * Allows add/remove favorites across screens
+  * Ensures predictable state updates
+* **Fake Store API**
+
+  * Used for product listing
+  * `https://fakestoreapi.com/products`
 
 ---
 
-## ✅ Commit & Branch Strategy (Suggested)
-- **main**: stable releases.
-- **dev**: integration branch.
-- **feature/***: for new features.
-- Conventional commits: `feat:`, `fix:`, `docs:`, `chore:`.
+## 🗂️ Folder Structure Explanation
+
+```text
+src/
+├── components/        # Reusable UI components (Button, Header, Inputs)
+├── core/
+│   └── firebase/      # Firebase config & auth instance
+├── navigation/        # RootNavigator, AuthFlow, stacks
+├── screens/
+│   ├── Auth/          # Login & Signup screens
+│   ├── Home/          # Home screen (banners, greetings)
+│   ├── Products/      # Product list, search, categories, details
+│   ├── Favorites/     # Liked / favorite products
+│   ├── Profile/       # Profile settings screen
+│   └── Splash/        # Splash screen
+        # Splash screen
+├── utils/             # Colors, spacing, helpers, validators
+├── store/             # Redux Toolkit setup (future scalability)
+└── assets/            # Images, banners, static assets
+```
+
+### Why this structure?
+
+* **Scales well** as app grows
+* **Clear separation of concerns**
+* Firebase logic is isolated
+* Navigation logic is centralized
+* Screens stay readable and focused
 
 ---
 
-## 🧪 Testing (Later)
-- Unit tests for utils/components (Jest/RTL).
-- E2E tests (Detox) for navigation flows.
+## ✅ Key Highlights
+
+* Firebase Auth persistence (no manual sessions)
+* Redux Toolkit for favorites management
+* Global product search functionality
+* Horizontal category selection
+* Realistic banners for improved UI/UX
+* Clean auth-driven navigation
+* Real-world error handling
+* Scalable folder structure
+* Production-ready patterns
 
 ---
 
-## 🔒 Security
-- Do not commit secrets or `.env`.
-- Use `.gitignore` to exclude build artifacts.
+## 🚀 Future Improvements
 
+* Firestore-backed user profiles
+* Avatar upload
+* Dark mode support
+* AuthContext abstraction
 ---
 
-## 📜 License
-Add a license if open-sourcing (e.g., MIT).
-
----
-
-## 🚀 Roadmap
-- Add API client and data layer.
-- Implement state management (Context/Zustand/Redux).
-- CI setup (GitHub Actions).
-- Theming and accessibility polishing.
+Built with ❤️ using React Native CLI & Firebase
