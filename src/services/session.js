@@ -1,14 +1,58 @@
+// import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// const KEY = "APP_USER";
+
+// export async function saveUserSession(user) {
+//   try {
+//     await AsyncStorage.setItem(KEY, JSON.stringify(user));
+//   } catch (e) {
+//     console.log("Error saving user session:", e);
+//   }
+// }
+
+// export async function loadUserSession() {
+//   try {
+//     const raw = await AsyncStorage.getItem(KEY);
+//     return raw ? JSON.parse(raw) : null;
+//   } catch (e) {
+//     console.log("Error loading user session:", e);
+//     return null;
+//   }
+// }
+
+// export async function clearUserSession() {
+//   try {
+//     await AsyncStorage.removeItem(KEY);
+//   } catch (e) {
+//     console.log("Error clearing user session:", e);
+//   }
+// }
 import AsyncStorage from '@react-native-async-storage/async-storage';
-const KEY = 'APP_USER';
+
+const KEY = "APP_USER";
 
 export async function saveUserSession(user) {
-  await AsyncStorage.setItem(KEY, JSON.stringify(user));
+  try {
+    await AsyncStorage.setItem(KEY, JSON.stringify(user));
+  } catch (e) {
+    console.log("Error saving user session:", e);
+  }
 }
-export async function clearUserSession() {
-  await AsyncStorage.removeItem(KEY);
-}
+
 export async function getUserSession() {
-  const json = await AsyncStorage.getItem(KEY);
-  return json ? JSON.parse(json) : null;
+  try {
+    const raw = await AsyncStorage.getItem(KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    console.log("Error loading user session:", e);
+    return null;
+  }
+}
+
+export async function clearUserSession() {
+  try {
+    await AsyncStorage.removeItem(KEY);
+  } catch (e) {
+    console.log("Error clearing user session:", e);
+  }
 }

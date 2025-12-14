@@ -1,114 +1,99 @@
-// import React, { useState } from 'react';
-// import { createNativeStackNavigator } from '@react-navigation/native-stack';
+// // src/navigation/RootNavigator.js
 
-// // Screens
-// import LoginScreen from '../screens/Auth/LoginScreen';
-// import SignupScreen from '../screens/Auth/SignupScreen';
-// import FavoritesScreen from '../screens/Favorites/FavoritesScreen';
-// import HomeScreen from '../screens/Home/HomeScreen';
-// import ProductDetailScreen from '../screens/Products/ProductDetailScreen';
-// import ProductListScreen from '../screens/Products/ProductListScreen';
-// import ProfileSettingsScreen from '../screens/Profile/ProfileSettingsScreen';
+// import { createNativeStackNavigator } from "@react-navigation/native-stack";
+
+
+// import SplashScreen from "../screens/Splash/SplashScreen";
+// import HomeScreen from "../screens/Home/HomeScreen";
+// import ProductListScreen from "../screens/Products/ProductListScreen";
+// import ProductDetailScreen from "../screens/Products/ProductDetailScreen";
+// import FavoritesScreen from "../screens/Favorites/FavoritesScreen";
+// import ProfileSettingsScreen from "../screens/Profile/ProfileSettingsScreen";
+// import AuthFlow from "./AuthFlow";
 
 // const Stack = createNativeStackNavigator();
 
-// export default function RootNavigator() {
-//   const [isSignedIn, setIsSignedIn] = useState(false);
-
+// export default function RootNavigator({ isSignedIn }) {
 //   return (
 //     <Stack.Navigator screenOptions={{ headerShown: false }}>
-//       {isSignedIn ? (
+//       <Stack.Screen name="Splash" component={SplashScreen} />
+
+//       {!isSignedIn ? (
+//         <Stack.Screen name="AuthFlow" component={AuthFlow} />
+//       ) : (
 //         <>
-//           <Stack.Screen name="Home">
-//             {(props) => (
-//               <HomeScreen {...props} userName="Siddhesh" />
-//             )}
-//           </Stack.Screen>
+//           <Stack.Screen name="Home" component={HomeScreen} />
 
 //           <Stack.Screen name="ProductList" component={ProductListScreen} />
 //           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
 
-//           <Stack.Screen name="Favorites">
-//             {(props) => (
-//               <FavoritesScreen {...props} userName="Siddhesh" />
-//             )}
-//           </Stack.Screen>
+//           <Stack.Screen name="Favorites" component={FavoritesScreen} />
 
-//           <Stack.Screen name="ProfileSettings">
-//             {(props) => (
-//               <ProfileSettingsScreen
-//                 {...props}
-//                 onLogout={() => setIsSignedIn(false)}
-//               />
-//             )}
-//           </Stack.Screen>
-//         </>
-//       ) : (
-//         <>
-//           <Stack.Screen name="Login">
-//             {(props) => (
-//               <LoginScreen {...props} onLoggedIn={() => setIsSignedIn(true)} />
-//             )}
-//           </Stack.Screen>
-
-//           <Stack.Screen name="Signup" component={SignupScreen} />
+//           <Stack.Screen
+//             name="ProfileSettings"
+//             component={ProfileSettingsScreen}
+//           />
 //         </>
 //       )}
 //     </Stack.Navigator>
 //   );
 // }
+// src/navigation/RootNavigator.js
+import { useEffect, useState } from "react";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-// navigation/RootNavigator.js
-import React, { useState } from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import SplashScreen from "../screens/Splash/SplashScreen";
+import HomeScreen from "../screens/Home/HomeScreen";
+import ProductListScreen from "../screens/Products/ProductListScreen";
+import ProductDetailScreen from "../screens/Products/ProductDetailScreen";
+import FavoritesScreen from "../screens/Favorites/FavoritesScreen";
+import ProfileSettingsScreen from "../screens/Profile/ProfileSettingsScreen";
+import AuthFlow from "./AuthFlow";
 
-// Screens
-import LoginScreen from '../screens/Auth/LoginScreen';
-import SignupScreen from '../screens/Auth/SignupScreen';
-import FavoritesScreen from '../screens/Favorites/FavoritesScreen';
-import HomeScreen from '../screens/Home/HomeScreen';
-import ProductDetailScreen from '../screens/Products/ProductDetailScreen';
-import ProductListScreen from '../screens/Products/ProductListScreen';
-import ProfileSettingsScreen from '../screens/Profile/ProfileSettingsScreen';
+import { getUserSession } from "../services/session";
 
 const Stack = createNativeStackNavigator();
 
 export default function RootNavigator() {
+  const [loading, setLoading] = useState(true);
   const [isSignedIn, setIsSignedIn] = useState(false);
 
-  // 🔥 This is SAFE — conditional return does NOT break hooks
-  if (!isSignedIn) {
-    return (
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Login">
-          {(props) => (
-            <LoginScreen {...props} onLoggedIn={() => setIsSignedIn(true)} />
-          )}
-        </Stack.Screen>
+  // Load session once
+  useEffect(() => {
+    (async () => {
+      const session = await getUserSession();
+      setIsSignedIn(!!session);
+      setLoading(false);
+    })();
+  }, []);
 
-        <Stack.Screen name="Signup" component={SignupScreen} />
-      </Stack.Navigator>
-    );
+  // Callback passed to Login + Signup
+  const handleLoggedIn = () => {
+    setIsSignedIn(true);
+  };
+
+  if (loading) {
+    return <SplashScreen />;
   }
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Home">
-        {(props) => <HomeScreen {...props} userName="Siddhesh" />}
-      </Stack.Screen>
-
-      <Stack.Screen name="ProductList" component={ProductListScreen} />
-      <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
-
-      <Stack.Screen name="Favorites">
-        {(props) => <FavoritesScreen {...props} userName="Siddhesh" />}
-      </Stack.Screen>
-
-      <Stack.Screen name="ProfileSettings">
-        {(props) => (
-          <ProfileSettingsScreen {...props} onLogout={() => setIsSignedIn(false)} />
-        )}
-      </Stack.Screen>
+      {!isSignedIn ? (
+        <Stack.Screen name="AuthFlow">
+          {(props) => <AuthFlow {...props} onLoggedIn={handleLoggedIn} />}
+        </Stack.Screen>
+      ) : (
+        <>
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="ProductList" component={ProductListScreen} />
+          <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
+          <Stack.Screen name="Favorites" component={FavoritesScreen} />
+          <Stack.Screen
+            name="ProfileSettings"
+            component={ProfileSettingsScreen}
+          />
+        </>
+      )}
     </Stack.Navigator>
   );
 }

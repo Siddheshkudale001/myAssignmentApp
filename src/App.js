@@ -12,13 +12,13 @@ import Toast from 'react-native-toast-message';
 export default function App() {
   return (
     <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
+      {/* <PersistGate loading={null} persistor={persistor}> */}
         <NavigationContainer>
           <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
           <RootNavigator />
         </NavigationContainer>
         <Toast />
-      </PersistGate>
+      {/* </PersistGate> */}
     </Provider>
   );
 }

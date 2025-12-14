@@ -20,6 +20,7 @@ import { colors, globalStyles, layout, shadows, spacing, typography } from '../.
 import { signUpWithEmail } from '../../core/firebase/auth';
 
 import { saveUserSession } from '../../services/session';
+import { showToast } from '../../utils/toast';
 
 // -------------------- Validators --------------------
 const isEmail = (v) => /\S+@\S+\.\S+/.test(v);
@@ -67,36 +68,42 @@ export default function SignupScreen({ navigation }) {
   };
 
   // -------------------- Submit --------------------
+
   const onSubmit = async () => {
-    if (submitting) return;
+  if (submitting) return;
 
-    setFormError(null);
-    if (!validate()) return;
+  setFormError(null);
+  if (!validate()) return;
 
-    try {
-      setSubmitting(true);
+  try {
+    setSubmitting(true);
 
-      // ✅ Correct param signature for your auth.js
-      const appUser = await signUpWithEmail(
-        fullName.trim(),
-        email.trim().toLowerCase(),
-        password,
-        mobile
-      );
+    // ✅ FIX — pass an OBJECT, not separate params
+    const appUser = await signUpWithEmail({
+      name: fullName.trim(),
+      email: email.trim().toLowerCase(),
+      password,
+      phone: mobile,
+    });
 
-      await saveUserSession(appUser);
+    await saveUserSession(appUser);
 
-      Alert.alert('Account created', 'You can now log in.', [
-        { text: 'OK', onPress: () => navigation.navigate('Login') },
-      ]);
-    } catch (e) {
-      const msg = friendlyError(e?.code, e?.message);
-      setFormError(msg);
-      Alert.alert('Sign Up Error', msg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    Alert.alert('Account created', 'You can now log in.', [
+      { text: 'OK', onPress: () => navigation.navigate('Login') },
+    ]);
+
+  } catch (e) {
+    console.log("Firebase signup error:", e.code, e.message);
+
+    const msg = friendlyError(e?.code, e?.message);
+    setFormError(msg);
+    Alert.alert('Sign Up Error', msg);
+
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   // -------------------- UI --------------------
   return (

@@ -1,24 +1,16 @@
-// import { app } from "./config";
-// import { getAuth } from "firebase/auth";
+import { auth } from "./authInstance";
+import { db } from "./firestore"; // no circular import now
 
-// export const auth = getAuth(app);
-// src/core/firebase/auth.js
-import { app } from "./config";
 import {
-  getAuth,
   createUserWithEmailAndPassword,
   updateProfile,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
-// -------------------- SIGN UP --------------------
 export async function signUpWithEmail({ name, email, password, phone }) {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
-
   await updateProfile(cred.user, { displayName: name });
 
   await setDoc(doc(db, "users", cred.user.uid), {
@@ -37,7 +29,6 @@ export async function signUpWithEmail({ name, email, password, phone }) {
   };
 }
 
-// -------------------- SIGN IN --------------------
 export async function signInWithEmail(email, password) {
   const cred = await signInWithEmailAndPassword(auth, email, password);
 

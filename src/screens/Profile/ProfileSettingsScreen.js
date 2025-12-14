@@ -1,5 +1,5 @@
-import { useNavigation } from '@react-navigation/native';
-import { useMemo, useState } from 'react';
+import { useNavigation } from "@react-navigation/native";
+import { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -8,82 +8,124 @@ import {
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import AppHeader from '../../components/common/AppHeader';
-import Button from '../../components/common/Button';
-import TextInput from '../../components/common/TextInput';
-import { colors } from '../../utils';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
+import AppHeader from "../../components/common/AppHeader";
+import Button from "../../components/common/Button";
+import TextInput from "../../components/common/TextInput";
 
-// Validators
+import { colors } from "../../utils";
+
+import { getAuth, updateEmail, updateProfile, signOut } from "firebase/auth";
+import { app } from "../../core/firebase/config";
+
+import { clearUserSession } from "../../services/session";
+
 const isEmail = (v) => /\S+@\S+\.\S+/.test(v);
 const isPhone10 = (v) => /^[0-9]{10}$/.test(v);
-const isNonEmpty = (v) => typeof v === 'string' && v.trim().length > 0;
+const isNonEmpty = (v) => typeof v === "string" && v.trim().length > 0;
 
 const COLORS = {
-  background: '#F8FAFD',
-  card: '#FFFFFF',
-  text: '#0F172A',
-  textMuted: '#64748B',
-  primary: '#2563EB',
-  border: '#E2E8F0',
-  danger: '#EF4444',
-  shadow: '#000',
+  background: "#F8FAFD",
+  card: "#FFFFFF",
+  text: "#0F172A",
+  textMuted: "#64748B",
+  primary: "#2563EB",
+  border: "#E2E8F0",
+  danger: "#EF4444",
+  shadow: "#000",
 };
 
-const initialsFromName = (name) =>
+const initialsFromName = (name = "") =>
   name
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 2)
-    .map((s) => s[0]?.toUpperCase() ?? '')
-    .join('');
+    .map((s) => s[0]?.toUpperCase() ?? "")
+    .join("");
 
-export default function ProfileSettingsScreen({ onLogout }) {
+export default function ProfileSettingsScreen() {
   const navigation = useNavigation();
+  const auth = getAuth(app);
+  const user = auth.currentUser;
 
   const [profile, setProfile] = useState({
-    name: 'Siddhesh Krishna Kudale',
-    email: 'siddhesh@example.com',
-    phone: '9876543210',
+    name: "",
+    email: "",
+    phone: "",
   });
 
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
 
-  const styles = useMemo(() => makeStyles(), []);
+  const styles = makeStyles();
+
+  useEffect(() => {
+    if (!user) return;
+
+    setProfile({
+      name: user.displayName || "",
+      email: user.email || "",
+      phone: user.phoneNumber || "",
+    });
+  }, [user]);
 
   const validate = () => {
     const errs = {};
-    if (!isNonEmpty(profile.name)) errs.name = 'Please enter your full name';
-    if (!isEmail(profile.email)) errs.email = 'Please enter a valid email';
-    if (!isPhone10(profile.phone)) errs.phone = 'Enter a 10-digit phone number';
+    if (!isNonEmpty(profile.name)) errs.name = "Please enter your full name";
+    if (!isEmail(profile.email)) errs.email = "Please enter a valid email";
+    if (!isPhone10(profile.phone)) errs.phone = "Enter a 10-digit phone number";
+
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const onSave = async () => {
     if (!validate()) return;
+    if (!user) return Alert.alert("Error", "User not logged in");
+
     try {
       setSaving(true);
-      await new Promise((r) => setTimeout(r, 600));
-      Alert.alert('Profile updated', 'Your changes have been saved.');
+
+      await updateProfile(user, { displayName: profile.name });
+
+      if (profile.email !== user.email) {
+        await updateEmail(user, profile.email);
+      }
+
+      Alert.alert("Success", "Profile updated 👍");
+    } catch (err) {
+      console.log("Update error:", err);
+      Alert.alert(
+        "Update failed",
+        err.message || "Could not update profile. Please try again."
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  const handleLogout = () => {
-    onLogout();
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      await clearUserSession();
+
+      // navigation.replace("AuthFlow");
+      navigation.getParent()?.navigate("AuthFlow");
+
+    } catch (err) {
+      Alert.alert("Logout failed", "Try again.");
+    }
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 , backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <AppHeader title="Settings" showBack />
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
           contentContainerStyle={styles.scroll}
@@ -91,20 +133,21 @@ export default function ProfileSettingsScreen({ onLogout }) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.container}>
-
-            {/* Header */}
             <View style={styles.header}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>{initialsFromName(profile.name)}</Text>
+                <Text style={styles.avatarText}>
+                  {initialsFromName(profile.name)}
+                </Text>
               </View>
 
               <View style={styles.headerText}>
                 <Text style={styles.title}>Profile Settings</Text>
-                <Text style={styles.subtitle}>Manage your personal information</Text>
+                <Text style={styles.subtitle}>
+                  Manage your personal information
+                </Text>
               </View>
             </View>
 
-            {/* Profile Card */}
             <View style={styles.card}>
               <Text style={styles.sectionTitle}>Your Details</Text>
 
@@ -114,7 +157,8 @@ export default function ProfileSettingsScreen({ onLogout }) {
                   value={profile.name}
                   onChangeText={(t) => {
                     setProfile((p) => ({ ...p, name: t }));
-                    if (errors.name) setErrors((e) => ({ ...e, name: undefined }));
+                    if (errors.name)
+                      setErrors((e) => ({ ...e, name: undefined }));
                   }}
                   error={errors.name}
                 />
@@ -126,7 +170,8 @@ export default function ProfileSettingsScreen({ onLogout }) {
                   value={profile.email}
                   onChangeText={(t) => {
                     setProfile((p) => ({ ...p, email: t }));
-                    if (errors.email) setErrors((e) => ({ ...e, email: undefined }));
+                    if (errors.email)
+                      setErrors((e) => ({ ...e, email: undefined }));
                   }}
                   keyboardType="email-address"
                   autoCapitalize="none"
@@ -134,27 +179,13 @@ export default function ProfileSettingsScreen({ onLogout }) {
                 />
               </View>
 
-              <View style={styles.field}>
-                <TextInput
-                  label="Phone Number"
-                  value={profile.phone}
-                  onChangeText={(t) => {
-                    const digits = t.replace(/[^\d]/g, '');
-                    setProfile((p) => ({ ...p, phone: digits }));
-                    if (errors.phone) setErrors((e) => ({ ...e, phone: undefined }));
-                  }}
-                  keyboardType="phone-pad"
-                  maxLength={10}
-                  error={errors.phone}
-                />
-              </View>
-
               <View style={styles.actionsRow}>
                 <Button
-                  title={saving ? 'Saving...' : 'Save'}
+                  title={saving ? "Saving..." : "Save"}
                   onPress={onSave}
                   style={styles.saveBtn}
                 />
+
                 <Button
                   title="Logout"
                   onPress={handleLogout}
@@ -162,7 +193,6 @@ export default function ProfileSettingsScreen({ onLogout }) {
                 />
               </View>
             </View>
-
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -172,24 +202,16 @@ export default function ProfileSettingsScreen({ onLogout }) {
 
 const makeStyles = () =>
   StyleSheet.create({
-    safe: {
-      flex: 1,
-      backgroundColor: COLORS.background,
-    },
-
-    scroll: {
-      paddingBottom: 30,
-    },
+    scroll: { paddingBottom: 30 },
 
     container: {
       paddingHorizontal: 20,
       paddingTop: 16,
     },
 
-    // Header
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       marginBottom: 24,
     },
 
@@ -200,8 +222,8 @@ const makeStyles = () =>
       backgroundColor: COLORS.card,
       borderWidth: 1,
       borderColor: COLORS.border,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: "center",
+      justifyContent: "center",
       marginRight: 14,
       shadowColor: COLORS.shadow,
       shadowOpacity: 0.06,
@@ -212,7 +234,7 @@ const makeStyles = () =>
 
     avatarText: {
       fontSize: 20,
-      fontWeight: '700',
+      fontWeight: "700",
       color: COLORS.text,
     },
 
@@ -220,7 +242,7 @@ const makeStyles = () =>
 
     title: {
       fontSize: 24,
-      fontWeight: '700',
+      fontWeight: "700",
       color: COLORS.text,
     },
 
@@ -230,7 +252,6 @@ const makeStyles = () =>
       color: COLORS.textMuted,
     },
 
-    // Card
     card: {
       backgroundColor: COLORS.card,
       borderRadius: 16,
@@ -247,17 +268,15 @@ const makeStyles = () =>
 
     sectionTitle: {
       fontSize: 17,
-      fontWeight: '700',
+      fontWeight: "700",
       color: COLORS.text,
       marginBottom: 12,
     },
 
-    field: {
-      marginBottom: 14,
-    },
+    field: { marginBottom: 14 },
 
     actionsRow: {
-      flexDirection: 'row',
+      flexDirection: "row",
       marginTop: 8,
       gap: 10,
     },
