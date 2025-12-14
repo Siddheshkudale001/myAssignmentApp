@@ -1,3 +1,5 @@
+//MIGHT NOT BE IN USE ANYMORE
+// src/services/session.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEY = "APP_USER";

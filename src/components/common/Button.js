@@ -1,6 +1,5 @@
 
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity } from 'react-native';
 
 export default function Button({ title, onPress }) {
   return (

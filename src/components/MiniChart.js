@@ -1,7 +1,6 @@
 
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { colors, spacing, radius } from '../utils';
+import { StyleSheet, View } from 'react-native';
+import { colors, radius, spacing } from '../utils';
 
 // Minimal bar chart: no deps, no animation.
 // Props: data:number[], height:number, barWidth:number, gap:number

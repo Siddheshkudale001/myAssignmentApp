@@ -1,5 +1,5 @@
 // src/navigation/AppNavigation.js
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import RootNavigator from "./RootNavigator";
 
 export default function AppNavigation() {

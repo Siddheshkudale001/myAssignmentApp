@@ -1,6 +1,6 @@
-import { View, Text, TouchableOpacity, TextInput, StyleSheet } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { colors, spacing, typography } from "../../utils";
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { spacing, typography } from "../../utils";
 
 export default function AppHeader({
   title,

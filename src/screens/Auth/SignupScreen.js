@@ -10,16 +10,15 @@ import {
   View,
 } from 'react-native';
 
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../components/common/Button';
 import TextInput from '../../components/common/TextInput';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, globalStyles, layout, shadows, spacing, typography } from '../../utils';
 
 // ✅ Correct Firebase import (matches your new structure)
 import { signUpWithEmail } from '../../core/firebase/auth';
 
-import { saveUserSession } from '../../services/session';
 import { showToast } from '../../utils/toast';
 
 // -------------------- Validators --------------------
@@ -87,11 +86,6 @@ export default function SignupScreen({ navigation }) {
       phone: mobile,
     });
     showToast(`User ${fullName} has been created successfully!`);
-    // await saveUserSession(appUser);
-
-    // Alert.alert('Account created', 'You can now log in.', [
-    //   { text: 'OK', onPress: () => navigation.navigate('Login') },
-    // ]);
 
   } catch (e) {
     console.log("Firebase signup error:", e.code, e.message);
