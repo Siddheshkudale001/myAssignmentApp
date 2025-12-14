@@ -10,17 +10,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
 import AppHeader from "../../components/common/AppHeader";
 import Button from "../../components/common/Button";
 import TextInput from "../../components/common/TextInput";
-
 import { colors } from "../../utils";
+import { signOut, updateEmail, updateProfile } from "firebase/auth";
+import { useAuth } from "../../core/auth/useAuth";
+import { auth } from "../../core/firebase/authInstance";
 
-import { getAuth, updateEmail, updateProfile, signOut } from "firebase/auth";
-import { app } from "../../core/firebase/config";
-
-import { clearUserSession } from "../../services/session";
 
 const isEmail = (v) => /\S+@\S+\.\S+/.test(v);
 const isPhone10 = (v) => /^[0-9]{10}$/.test(v);
@@ -47,8 +44,6 @@ const initialsFromName = (name = "") =>
 
 export default function ProfileSettingsScreen() {
   const navigation = useNavigation();
-  const auth = getAuth(app);
-  const user = auth.currentUser;
 
   const [profile, setProfile] = useState({
     name: "",
@@ -58,6 +53,7 @@ export default function ProfileSettingsScreen() {
 
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const user = useAuth();
 
   const styles = makeStyles();
 
@@ -82,21 +78,30 @@ export default function ProfileSettingsScreen() {
   };
 
   const onSave = async () => {
+    console.log("Saving profile..new.");
     if (!validate()) return;
     if (!user) return Alert.alert("Error", "User not logged in");
 
     try {
       setSaving(true);
 
-      await updateProfile(user, { displayName: profile.name });
+      // 1️⃣ Update display name
+      await updateProfile(user, {
+        displayName: profile.name,
+      });
 
+      // 2️⃣ Update email (if changed)
       if (profile.email !== user.email) {
         await updateEmail(user, profile.email);
       }
 
+      // 3️⃣ 🔥 Force Firebase to refresh user object
+      await user.reload();
+
       Alert.alert("Success", "Profile updated 👍");
     } catch (err) {
       console.log("Update error:", err);
+
       Alert.alert(
         "Update failed",
         err.message || "Could not update profile. Please try again."
@@ -109,12 +114,7 @@ export default function ProfileSettingsScreen() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      await clearUserSession();
-
-      // navigation.replace("AuthFlow");
-      navigation.getParent()?.navigate("AuthFlow");
-
-    } catch (err) {
+    } catch {
       Alert.alert("Logout failed", "Try again.");
     }
   };

@@ -15,9 +15,13 @@ import AppHeader from '../../components/common/AppHeader';
 import ProductCard from '../../components/ProductCard';
 import { colors, spacing } from '../../utils';
 import { formatINR } from '../../utils/format';
+import { useAuth } from "../../core/auth/useAuth";
+
 
 export default function HomeScreen({ navigation }) {
-  const userName = 'Siddhesh';
+   const user = useAuth();
+
+  const userName = user?.displayName || "Guest";
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);

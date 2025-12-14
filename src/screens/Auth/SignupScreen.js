@@ -70,6 +70,7 @@ export default function SignupScreen({ navigation }) {
   // -------------------- Submit --------------------
 
   const onSubmit = async () => {
+    console.log("Submitting signup form...");
   if (submitting) return;
 
   setFormError(null);
@@ -77,7 +78,7 @@ export default function SignupScreen({ navigation }) {
 
   try {
     setSubmitting(true);
-
+    showToast(`User ${fullName} has been created successfully!`);
     // ✅ FIX — pass an OBJECT, not separate params
     const appUser = await signUpWithEmail({
       name: fullName.trim(),
@@ -85,12 +86,12 @@ export default function SignupScreen({ navigation }) {
       password,
       phone: mobile,
     });
+    showToast(`User ${fullName} has been created successfully!`);
+    // await saveUserSession(appUser);
 
-    await saveUserSession(appUser);
-
-    Alert.alert('Account created', 'You can now log in.', [
-      { text: 'OK', onPress: () => navigation.navigate('Login') },
-    ]);
+    // Alert.alert('Account created', 'You can now log in.', [
+    //   { text: 'OK', onPress: () => navigation.navigate('Login') },
+    // ]);
 
   } catch (e) {
     console.log("Firebase signup error:", e.code, e.message);

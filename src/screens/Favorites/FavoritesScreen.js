@@ -59,13 +59,6 @@ export default function FavoritesScreen({ userName = 'Siddhesh' }) {
 
   const ListHeader = (
     <>
-      <View style={styles.header}>
-        <Text style={styles.greet}>
-          Favorites of <Text style={styles.greetName}>{userName}</Text> ❤️
-        </Text>
-        <Text style={styles.subGreet}>Saved items for quick access</Text>
-      </View>
-
       <View style={styles.countRow}>
         <Text style={styles.countText}>Total: {favoritesList.length}</Text>
       </View>
