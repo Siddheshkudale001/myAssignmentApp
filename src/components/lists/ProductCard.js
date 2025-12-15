@@ -31,7 +31,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.greeting}>Hello, Siddhesh</Text>
+      <Text style={styles.greeting}>Hello, Guest</Text>
 
       {loading ? (
         <ActivityIndicator size="large" color="#1976D2" style={{ marginTop: 24 }} />

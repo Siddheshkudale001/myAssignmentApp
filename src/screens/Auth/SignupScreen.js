@@ -69,7 +69,6 @@ export default function SignupScreen({ navigation }) {
   // -------------------- Submit --------------------
 
   const onSubmit = async () => {
-    console.log("Submitting signup form...");
   if (submitting) return;
 
   setFormError(null);
@@ -86,10 +85,7 @@ export default function SignupScreen({ navigation }) {
       phone: mobile,
     });
     showToast(`User ${fullName} has been created successfully!`);
-
   } catch (e) {
-    console.log("Firebase signup error:", e.code, e.message);
-
     const msg = friendlyError(e?.code, e?.message);
     setFormError(msg);
     Alert.alert('Sign Up Error', msg);

@@ -32,7 +32,7 @@ import { formatINR } from '../../utils/format';
 import { showToast } from '../../utils/toast';
 
 
-export default function ProductListScreen({ userName = 'Siddhesh', navigation }) {
+export default function ProductListScreen({ navigation }) {
   const dispatch = useDispatch();
 
   const productState = useSelector((s) => s?.products || {});
@@ -66,30 +66,6 @@ export default function ProductListScreen({ userName = 'Siddhesh', navigation })
   return values[Math.floor(Math.random() * values.length)];
 };
 
-  // ==============================
-  //   FIX: NO HOOKS AFTER RETURNS
-  // ==============================
-
-  // if (status === 'loading') {
-  //   return (
-  //     <SafeAreaView style={styles.centerPage}>
-  //       <Text style={{ fontSize: 16 }}>Loading products…</Text>
-  //     </SafeAreaView>
-  //   );
-  // }
-
-  // if (status === 'failed') {
-  //   return (
-  //     <SafeAreaView style={styles.centerPage}>
-  //       <Text style={{ fontSize: 16, color: 'red' }}>
-  //         {error || 'Error loading products'}
-  //       </Text>
-  //       <TouchableOpacity onPress={() => dispatch(fetchProducts())} style={{ marginTop: 20 }}>
-  //         <Text style={{ color: colors.primary, fontWeight: '700' }}>Retry</Text>
-  //       </TouchableOpacity>
-  //     </SafeAreaView>
-  //   );
-  // }
   if (status === 'loading') console.log("loading");
   if (status === 'failed') console.log("error");
 

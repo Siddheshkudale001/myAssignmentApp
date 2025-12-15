@@ -16,7 +16,7 @@ import { fetchProducts } from '../../store/slices/productsSlice';
 import { colors, globalStyles, layout, spacing } from '../../utils';
 import AppHeader from '../../components/common/AppHeader';
 
-export default function FavoritesScreen({ userName = 'Siddhesh' }) {
+export default function FavoritesScreen({ navigation }) {
   const dispatch = useDispatch();
 
   const products = useSelector((s) => s.products.list);

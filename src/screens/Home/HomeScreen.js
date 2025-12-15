@@ -37,7 +37,6 @@ export default function HomeScreen({ navigation }) {
       const data = await res.json();
       setProducts(data);
     } catch (e) {
-      console.log('Fetch Error:', e);
       setError(true);
     } finally {
       setLoading(false);

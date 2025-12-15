@@ -75,7 +75,6 @@ export default function ProductDetailScreen({ route }) {
           priceTrend: generateRandomTrend(),
         });
       } catch (e) {
-        console.log('Failed to load product:', e);
       } finally {
         setLoading(false);
       }
