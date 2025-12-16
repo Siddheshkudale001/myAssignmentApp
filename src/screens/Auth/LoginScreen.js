@@ -7,18 +7,22 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 import Button from "../../components/common/Button";
 import TextInput from "../../components/common/TextInput";
 import { colors, globalStyles, layout, shadows, spacing } from "../../utils";
 import { isEmail } from "../../utils/validators";
-
 import { signInWithEmail } from "../../core/firebase/auth";
 
 const isNotEmpty = (v) => typeof v === "string" && v.trim().length > 0;
 
-export default function LoginScreen({ navigation, onLoggedIn }) {
+export default function LoginScreen({ navigation }) {
+  const { width, height } = useWindowDimensions();
+  const isLandscape = width > height;
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState({});
@@ -48,39 +52,43 @@ export default function LoginScreen({ navigation, onLoggedIn }) {
   };
 
   const onSubmit = async () => {
-  if (submitting) return;
+    if (submitting) return;
+    setFormError(null);
+    if (!validate()) return;
 
-  setFormError(null);
-  if (!validate()) return;
-
-  try {
-    setSubmitting(true);
-
-    await signInWithEmail(
-      email.trim().toLowerCase(),
-      password
-    );
-
-  } catch (e) {
-    setFormError(friendlyError(e?.code));
-  } finally {
-    setSubmitting(false);
-  }
-};
+    try {
+      setSubmitting(true);
+      await signInWithEmail(email.trim().toLowerCase(), password);
+    } catch (e) {
+      setFormError(friendlyError(e?.code));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingVertical: isLandscape ? spacing.lg : spacing["2xl"] },
+          ]}
+        >
           <View style={styles.container}>
+            {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>Welcome back</Text>
               <Text style={styles.subtitle}>Sign in to continue</Text>
             </View>
 
+            {/* Card */}
             <View style={[globalStyles.card, shadows.card]}>
               <View style={globalStyles.field}>
                 <TextInput
@@ -111,9 +119,9 @@ export default function LoginScreen({ navigation, onLoggedIn }) {
                 />
               </View>
 
-              {formError ? (
+              {formError && (
                 <Text style={styles.errorText}>{formError}</Text>
-              ) : null}
+              )}
 
               <Button
                 title={submitting ? "Signing in..." : "Login"}
@@ -122,6 +130,7 @@ export default function LoginScreen({ navigation, onLoggedIn }) {
               />
             </View>
 
+            {/* Footer */}
             <TouchableOpacity
               style={styles.footer}
               onPress={() => navigation.navigate("Signup")}
@@ -139,19 +148,52 @@ export default function LoginScreen({ navigation, onLoggedIn }) {
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   flex: { flex: 1 },
-  scrollContent: { flexGrow: 1 },
+
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
+
   container: {
     ...layout.screen,
     paddingHorizontal: spacing["2xl"],
-    paddingTop: spacing["3xl"],
-    paddingBottom: spacing["2xl"],
   },
-  header: { marginBottom: spacing.xl },
-  title: { fontSize: 28, fontWeight: "700" },
-  subtitle: { marginTop: spacing.sm, opacity: 0.6 },
-  footer: { marginTop: spacing.xl, alignItems: "center" },
-  footerText: { fontSize: 14 },
-  footerLink: { color: colors.primary, fontWeight: "600" },
-  errorText: { color: "red", marginTop: 8 },
+
+  header: {
+    marginBottom: spacing.xl,
+  },
+
+  title: {
+    fontSize: 28,
+    fontWeight: "700",
+  },
+
+  subtitle: {
+    marginTop: spacing.sm,
+    opacity: 0.6,
+  },
+
+  footer: {
+    marginTop: spacing.xl,
+    alignItems: "center",
+  },
+
+  footerText: {
+    fontSize: 14,
+  },
+
+  footerLink: {
+    color: colors.primary,
+    fontWeight: "600",
+  },
+
+  errorText: {
+    color: "red",
+    marginTop: spacing.sm,
+  },
 });

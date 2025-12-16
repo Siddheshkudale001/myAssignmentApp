@@ -8,6 +8,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -107,7 +108,11 @@ export default function ProductDetailScreen({ route }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
       <AppHeader title="Details" showBack />
 
-      <View style={styles.container}>
+      {/* <View style={styles.container}> */}
+            <ScrollView
+              contentContainerStyle={styles.container}
+              showsVerticalScrollIndicator={false}
+            >
         {/* Title */}
         <View style={styles.header}>
           <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
@@ -185,13 +190,13 @@ export default function ProductDetailScreen({ route }) {
             </Text>
           </View>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { ...layout.screen },
+  container: { ...layout.screen  , flex : 0, paddingBottom: spacing['2xl']},
 
   header: {
     paddingHorizontal: spacing['2xl'],

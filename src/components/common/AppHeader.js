@@ -48,7 +48,7 @@ export default function AppHeader({
               onPress={() => navigation.navigate("ProfileSettings")}
               style={{ marginLeft: showFav ? 16 : 0 }}
             >
-              <Text style={styles.icon}>👤</Text>
+              <Text style={styles.icon}>⚙️</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -64,7 +64,13 @@ export default function AppHeader({
             onChangeText={onChangeSearch}
             style={styles.searchInput}
           />
-          <Text style={styles.searchIcon}>🔍</Text>
+          {search?.length > 0 ? (
+            <TouchableOpacity onPress={() => onChangeSearch?.("")}>
+              <Text style={styles.clearIcon}>✕</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.searchIcon}>🔍</Text>
+          )}
         </View>
       )}
     </View>
@@ -77,7 +83,7 @@ const styles = StyleSheet.create({
     height: 55,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.xl,
     justifyContent: "space-between",
     backgroundColor: "#fff",
     borderBottomWidth: 1,

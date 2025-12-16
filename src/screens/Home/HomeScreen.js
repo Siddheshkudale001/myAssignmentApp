@@ -3,23 +3,23 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
-  Image
+  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AppHeader from '../../components/common/AppHeader';
 import ProductCard from '../../components/ProductCard';
+import { useAuth } from "../../core/auth/useAuth";
 import { colors, spacing } from '../../utils';
 import { formatINR } from '../../utils/format';
-import { useAuth } from "../../core/auth/useAuth";
 
 
 export default function HomeScreen({ navigation }) {
-   const user = useAuth();
+  const user = useAuth();
 
   const userName = user?.displayName || "Guest";
 
@@ -79,8 +79,11 @@ export default function HomeScreen({ navigation }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
 
       <AppHeader title="Home" showProfile />
-
-      <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* <View style={styles.container}> */}
 
         {/* Greeting Section */}
         <View style={styles.header}>
@@ -95,7 +98,7 @@ export default function HomeScreen({ navigation }) {
           <Image
             source={require('../../assets/banner.jpg')}  // put your downloaded image here
             style={styles.banner}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         </View>
         {/* Virat Ads */}
@@ -103,7 +106,7 @@ export default function HomeScreen({ navigation }) {
           <Image
             source={require('../../assets/Virat.jpg')}
             style={styles.adImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         </View>
 
@@ -140,15 +143,16 @@ export default function HomeScreen({ navigation }) {
           <Text style={styles.fabIcon}>🗂️</Text>
         </TouchableOpacity>
 
-      </View>
+        {/* </View> */}
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: colors.background,
+    paddingBottom: spacing['2xl']
   },
   header: {
     padding: spacing['2xl'],
@@ -230,7 +234,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 150,
     borderRadius: 16,
-    backgroundColor: '#ddd',
+    backgroundColor: '#fff',
   },
 
   adBox: {
@@ -240,9 +244,9 @@ const styles = StyleSheet.create({
   },
   adImage: {
     width: '100%',
-    height: 120,
+    height: 195,
     borderRadius: 14,
-    backgroundColor: '#eee',
+    backgroundColor: '#fff',
   },
 
 });
