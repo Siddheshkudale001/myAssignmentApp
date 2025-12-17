@@ -1,40 +1,62 @@
 # 📱 React Native myAssignmentApp
 
-A modern React Native CLI application featuring Firebase Authentication, Redux Toolkit state management, clean navigation flow, and scalable architecture. Built with production-ready patterns and a focus on performance, maintainability, and real-world practices.
+A production-style **React Native CLI** application built with **Firebase Authentication**, **Firebase Database–backed user favorites**, and **Redux Toolkit** for app-level state orchestration. Designed with real-world patterns, auth-driven navigation, responsive layouts (portrait + landscape), and scalable architecture.
 
 ---
 
 ## 🧠 Architecture Overview
 
-This app follows a **Firebase-driven auth architecture** where Firebase Authentication is the single source of truth for user state.
+This app follows an **auth-first, Firebase-driven architecture** where Firebase is the single source of truth for user identity *and* user-owned data (favorites).
 
-### Key Principles
+### Core Principles
 
-* **Redux Toolkit for global state** (liked / favorite products)
-* **Firebase Auth = source of truth** for login/session
-* **Navigation reacts to auth state** (not the other way around)
-* **Screens stay dumb, logic stays centralized**
-* **Firebase Auth = source of truth** for login/session
-* **No manual session persistence** (Firebase handles persistence via AsyncStorage)
-* **Navigation reacts to auth state** (not the other way around)
-* **Screens stay dumb, logic stays centralized**
+* **Firebase Auth = single source of truth** for session & user identity
+* **Favorites are user-scoped & persisted in Firebase DB** (not local-only)
+* **Redux Toolkit orchestrates UI state**, not long-term user data
+* **Navigation reacts to auth state**, never the opposite
+* **Screens stay dumb**, logic lives in slices, listeners, and services
+* **No manual session persistence** (Firebase handles it internally)
+* **Responsive-first UI** (portrait + landscape supported)
 
-### App Flow (High Level)
+---
+
+## 🔄 App Flow (High Level)
 
 1. App boots
 2. Firebase restores auth state automatically
-3. `onAuthStateChanged` emits user / null
-4. RootNavigator switches between:
+3. `onAuthStateChanged` fires via `authListener`
+4. Auth state is synced into Redux (`authSlice`)
+5. RootNavigator switches between:
 
-   * AuthFlow (Login / Signup)
-   * Main App Screens:
+**Auth Flow**
 
-     * Home
-     * Product List
-     * Favorites
-     * Profile
+* Login
+* Signup
 
-This eliminates race conditions, stale state, and reload hacks.
+**Main App Flow**
+
+* Home
+* Product List
+* Favorites (user-specific)
+* Profile (extended settings)
+
+This prevents race conditions, stale sessions, and navigation hacks.
+
+---
+
+## ❤️ Favorites — How It Actually Works
+
+Favorites are **no longer local-only**.
+
+* Each user has their **own favorites stored in Firebase DB**
+* Marking a product as favorite:
+
+  * Requires authenticated user
+  * Saves product under the user’s UID in Firebase
+* Logging out does **not** clear favorites
+* Logging in from another device restores favorites automatically
+
+This makes the app multi-user safe and production-realistic.
 
 ---
 
@@ -43,14 +65,13 @@ This eliminates race conditions, stale state, and reload hacks.
 ### Prerequisites
 
 * Node.js (>= 18)
-* Yarn or npm
+* npm or Yarn
 * Android Studio / Xcode
-* React Native CLI environment
+* Proper React Native CLI environment
 
 ### Installation
 
 ```bash
-# install dependencies
 npm install
 
 # iOS only
@@ -64,18 +85,23 @@ npm run android
 npm run ios
 ```
 
-### Firebase Setup
+---
+
+## 🔐 Firebase Setup
 
 1. Create a Firebase project
-2. Enable **Email/Password Authentication**
-3. Add Android & iOS apps in Firebase console
-4. Download:
+2. Enable **Email / Password Authentication**
+3. Enable **Firebase Database** (Realtime DB or Firestore, as configured)
+4. Register Android & iOS apps
+5. Download:
 
    * `google-services.json`
    * `GoogleService-Info.plist`
-5. Place them in correct native folders
+6. Place files in correct native directories
 
-Firebase Auth is initialized with persistent storage:
+### Auth Persistence
+
+Firebase auth is initialized with persistent storage:
 
 ```js
 initializeAuth(app, {
@@ -85,7 +111,7 @@ initializeAuth(app, {
 
 ---
 
-## 🔌 APIs Used
+## 🔌 APIs & Tech Used
 
 ### Firebase
 
@@ -93,81 +119,96 @@ initializeAuth(app, {
 
   * Email/Password login & signup
   * Persistent auth state
-  * Profile updates (`updateProfile`, `updateEmail`)
+  * Profile updates
 
-### External APIs
+* **Firebase Database**
+
+  * User-specific favorites storage
+  * Sync across sessions & devices
+
+### External API
 
 * **Fake Store API**
 
-  * Product listing, categories, and product details
-  * Used for global search and category-based filtering
-  * `https://fakestoreapi.com/products`
+  * Product listing
+  * Categories & filtering
+  * Product details
 
-### State Management
-
-* **Redux Toolkit**
-
-  * Manages liked / favorite products globally
-  * Allows add/remove favorites across screens
-  * Ensures predictable state updates
-* **Fake Store API**
-
-  * Used for product listing
-  * `https://fakestoreapi.com/products`
+```text
+https://fakestoreapi.com/products
+```
 
 ---
 
-## 🗂️ Folder Structure Explanation
+## 🧠 State Management Strategy
+
+### Redux Toolkit
+
+* Auth state synced via `authSlice`
+* UI-driven state (loading, flags, selections)
+* Firebase remains the **data authority** for favorites
+
+Redux is used intentionally — not abused as a database.
+
+---
+
+## 🗂️ Folder Structure
 
 ```text
 src/
-├── components/        # Reusable UI components (Button, Header, Inputs)
+├── components/        # Reusable UI components
 ├── core/
-│   └── firebase/      # Firebase config & auth instance
+│   └── firebase/
+│       ├── authListener.js   # Central auth state listener
+│       ├── favorites.js      # Firebase favorites CRUD
+│       └── index.js          # Firebase initialization
 ├── navigation/        # RootNavigator, AuthFlow, stacks
 ├── screens/
-│   ├── Auth/          # Login & Signup screens
-│   ├── Home/          # Home screen (banners, greetings)
-│   ├── Products/      # Product list, search, categories, details
-│   ├── Favorites/     # Liked / favorite products
-│   ├── Profile/       # Profile settings screen
-│   └── Splash/        # Splash screen
-        # Splash screen
-├── utils/             # Colors, spacing, helpers, validators
-├── store/             # Redux Toolkit setup (future scalability)
-└── assets/            # Images, banners, static assets
+│   ├── Auth/          # Login & Signup
+│   ├── Home/
+│   ├── Products/
+│   ├── Favorites/
+│   ├── Profile/       # Extended settings (About, License, etc.)
+│   └── Splash/
+├── store/
+│   ├── slices/
+│   │   └── authSlice.js
+│   └── index.js
+├── utils/             # Helpers, constants, validators
+└── assets/            # Images & static assets
 ```
 
-### Why this structure?
+---
 
-* **Scales well** as app grows
-* **Clear separation of concerns**
-* Firebase logic is isolated
-* Navigation logic is centralized
-* Screens stay readable and focused
+## 📱 UI & UX Improvements
+
+* Full **landscape mode support**
+* Responsive layouts across orientations
+* Improved spacing & visual balance
+* Extended profile settings (About, License, App info)
 
 ---
 
 ## ✅ Key Highlights
 
-* Firebase Auth persistence (no manual sessions)
-* Redux Toolkit for favorites management
-* Global product search functionality
-* Horizontal category selection
-* Realistic banners for improved UI/UX
-* Clean auth-driven navigation
-* Real-world error handling
-* Scalable folder structure
-* Production-ready patterns
+* Firebase-backed user favorites (multi-user safe)
+* Auth-driven navigation architecture
+* Redux Toolkit used with intent
+* Responsive UI (portrait + landscape)
+* Clean separation of concerns
+* Scalable, production-style folder structure
+* No auth race conditions or manual persistence
 
 ---
 
-## 🚀 Future Improvements
+## 🚀 Possible Future Enhancements
 
-* Firestore-backed user profiles
-* Avatar upload
-* Dark mode support
-* AuthContext abstraction
+* Offline-first favorites sync
+* Avatar upload (Firebase Storage)
+* Dark mode
+* Product caching layer
+* Firestore migration (if using RTDB)
+
 ---
 
-Built with ❤️ using React Native CLI & Firebase
+Built with ❤️ using **React Native CLI**, **Firebase**, and real-world architectural patterns.

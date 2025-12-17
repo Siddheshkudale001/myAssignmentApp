@@ -6,8 +6,7 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 import CategoryChip from '../../components/CategoryChip';
@@ -21,98 +20,71 @@ import {
   globalStyles,
   radius,
   spacing,
-  typography
+  typography,
 } from '../../utils';
 
-import { useSelector, useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { toggleFavorite } from '../../store/slices/favoritesSlice';
 import { fetchProducts } from '../../store/slices/productsSlice';
 
 import { formatINR } from '../../utils/format';
 import { showToast } from '../../utils/toast';
 
+import { addFavorite, removeFavorite } from '../../core/firebase/favorites';
+
+const PAGE_SIZE = 4;
+const RECENT = 60;
 
 export default function ProductListScreen({ navigation }) {
   const dispatch = useDispatch();
 
-  const productState = useSelector((s) => s?.products || {});
+  const productState = useSelector((s) => s.products);
   const products = productState.list || [];
   const status = productState.status || 'idle';
-  const error = productState.error || null;
+
   const favoriteIds = useSelector((s) => s.favorites.ids);
+  const uid = useSelector((s) => s.auth.user?.uid);
 
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [recentlyViewed, setRecentlyViewed] = useState([]);
-
-  // Pagination
-  const PAGE_SIZE = 4;
   const [page, setPage] = useState(1);
 
-  // Auto-fetch on first load
+  /* ---------------- fetch products ---------------- */
   useEffect(() => {
     if (status === 'idle') {
       dispatch(fetchProducts());
     }
   }, [status, dispatch]);
 
-  // Pull-to-refresh
   const onRefresh = () => {
     dispatch(fetchProducts());
   };
 
-  const getDiscount = () => {
-  const values = [0, 10, 20, 30, 40, 50];
-  return values[Math.floor(Math.random() * values.length)];
-};
-
-  if (status === 'loading') console.log("loading");
-  if (status === 'failed') console.log("error");
-
-
+  /* ---------------- filtering ---------------- */
   const filtered = useMemo(() => {
-    try {
-      const s = (search || "").trim().toLowerCase();
+    const s = search.trim().toLowerCase();
 
-      return products.filter((p) => {
-        const title = p.title?.toLowerCase?.() ?? "";
-        const cat = p.category ?? "";
+    return products.filter((p) => {
+      const title = p.title?.toLowerCase?.() ?? '';
+      const cat = p.category ?? '';
 
-        const matchesSearch = s.length === 0 || title.includes(s);
-        const matchesCategory = category === "All" || cat === category;
-
-        return matchesSearch && matchesCategory;
-      });
-    } catch (err) {
-      console.warn("🔥 filter error:", err);
-      return products;
-    }
+      return (
+        (s.length === 0 || title.includes(s)) &&
+        (category === 'All' || cat === category)
+      );
+    });
   }, [products, search, category]);
 
-  const visibleData = useMemo(() => {
-    try {
-      return filtered.slice(0, page * PAGE_SIZE);
-    } catch (err) {
-      console.warn("🔥 pagination error:", err);
-      return filtered;
-    }
-  }, [filtered, page]);
+  const visibleData = useMemo(
+    () => filtered.slice(0, page * PAGE_SIZE),
+    [filtered, page]
+  );
 
   const categories = useMemo(() => {
-    try {
-      const set = new Set(products.map((p) => p.category).filter(Boolean));
-      return ["All", ...Array.from(set)];
-    } catch (err) {
-      console.warn("🔥 category error:", err);
-      return ["All"];
-    }
+    const set = new Set(products.map((p) => p.category).filter(Boolean));
+    return ['All', ...Array.from(set)];
   }, [products]);
-
-  //   const filtered = products;
-  // const visibleData = filtered;
-  // const categories = ["All"];
-  //temp solution if crash happens
-
 
   const onEndReached = () => {
     if (visibleData.length < filtered.length) {
@@ -120,36 +92,57 @@ export default function ProductListScreen({ navigation }) {
     }
   };
 
-  // ======== EVENTS ========
+  /* ---------------- events ---------------- */
   const onTapItem = (item) => {
-    // Save recently viewed
     setRecentlyViewed((prev) => {
       const exists = prev.find((p) => p.id === item.id);
-      const next = exists ? prev : [item, ...prev].slice(0, 10);
-      return next;
+      return exists ? prev : [item, ...prev].slice(0, 10);
     });
 
     Alert.alert(
-      "Product",
+      'Product',
       `${item.title}\n\nPrice: ${formatINR(item.price)}`,
       [
         {
-          text: "View Details",
-          onPress: () => navigation.navigate("ProductDetail", { id: item.id })
+          text: 'View Details',
+          onPress: () =>
+            navigation.navigate('ProductDetail', { id: item.id }),
         },
-        { text: "Cancel", style: "cancel" }
+        { text: 'Cancel', style: 'cancel' },
       ]
     );
   };
 
-  const onLongPressItem = (item) => {
-    dispatch(toggleFavorite(item.id));
-    showToast(`${item.title} added to favorites ❤️`);
+  const onLongPressItem = async (item) => {
+    if (!uid) {
+      showToast('Please login to add favorites');
+      return;
+    }
+
+    const isFav = favoriteIds.includes(item.id);
+
+    try {
+      if (isFav) {
+        await removeFavorite(uid, item.id);
+      } else {
+        await addFavorite(uid, item.id);
+      }
+
+      dispatch(toggleFavorite(item.id));
+
+      showToast(
+        isFav
+          ? `${item.title} removed from favorites`
+          : `${item.title} added to favorites ❤️`
+      );
+    } catch (e) {
+      console.error('🔥 Favorite error:', e);
+      showToast('Failed to update favorites');
+    }
   };
 
   const renderItem = ({ item }) => {
     const isFav = favoriteIds.includes(item.id);
-      const discount = getDiscount();
 
     return (
       <ProductRow
@@ -161,16 +154,20 @@ export default function ProductListScreen({ navigation }) {
     );
   };
 
-  // ======== HEADER COMPONENT ========
+  /* ---------------- header (RESTORED) ---------------- */
   const ListHeader = (
     <>
+      {/* Greeting */}
       <View style={styles.header}>
         <Text style={typography.greet}>
           Browse the catalog <Text style={styles.greetName}>here</Text> 👋
         </Text>
-        <Text style={styles.subGreet}>You can search or choose categories</Text>
+        <Text style={styles.subGreet}>
+          You can search or choose categories
+        </Text>
       </View>
 
+      {/* Categories */}
       <FlatList
         horizontal
         data={categories}
@@ -189,6 +186,7 @@ export default function ProductListScreen({ navigation }) {
         )}
       />
 
+      {/* Recently Viewed */}
       {recentlyViewed.length > 0 && (
         <View style={styles.recentWrap}>
           <Text style={typography.sectionTitle}>Recently viewed</Text>
@@ -202,7 +200,10 @@ export default function ProductListScreen({ navigation }) {
             renderItem={({ item }) => (
               <View style={styles.recentCard}>
                 <View style={styles.recentThumbWrap}>
-                  <Image source={{ uri: item.image }} style={styles.recentThumb} />
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.recentThumb}
+                  />
                 </View>
                 <Text numberOfLines={1} style={styles.recentTitle}>
                   {item.title}
@@ -215,22 +216,7 @@ export default function ProductListScreen({ navigation }) {
     </>
   );
 
-  const ListFooter = (
-    <View style={styles.footer}>
-      {visibleData.length < filtered.length ? (
-        <TouchableOpacity
-          style={styles.loadMoreBtn}
-          onPress={() => setPage((p) => p + 1)}
-        >
-          <Text style={styles.loadMoreText}>Load more</Text>
-        </TouchableOpacity>
-      ) : (
-        <Text style={styles.footerEnd}>No more products</Text>
-      )}
-    </View>
-  );
-
-  // ======== MAIN RENDER ========
+  /* ---------------- render ---------------- */
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <AppHeader
@@ -250,9 +236,13 @@ export default function ProductListScreen({ navigation }) {
         keyExtractor={(item) => String(item.id)}
         renderItem={renderItem}
         ListHeaderComponent={ListHeader}
-        ListFooterComponent={ListFooter}
         contentContainerStyle={globalStyles.listContent}
-        refreshControl={<RefreshControl refreshing={status === 'loading'} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl
+            refreshing={status === 'loading'}
+            onRefresh={onRefresh}
+          />
+        }
         onEndReached={onEndReached}
         onEndReachedThreshold={0.3}
       />
@@ -260,11 +250,9 @@ export default function ProductListScreen({ navigation }) {
   );
 }
 
-const RECENT = 60;
-
+/* ---------------- styles ---------------- */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  centerPage: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   header: {
     paddingHorizontal: spacing.xl,
@@ -294,17 +282,4 @@ const styles = StyleSheet.create({
   },
   recentThumb: { width: '100%', height: '100%' },
   recentTitle: { fontSize: 12, color: colors.text },
-
-  footer: {
-    paddingVertical: spacing.xl,
-    alignItems: 'center',
-  },
-  loadMoreBtn: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xl,
-    borderRadius: radius.md,
-  },
-  loadMoreText: { color: 'white', fontWeight: '700' },
-  footerEnd: { color: colors.textMuted, ...typography.caption },
 });

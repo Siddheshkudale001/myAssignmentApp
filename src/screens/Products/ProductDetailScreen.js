@@ -19,6 +19,8 @@ import AppHeader from '../../components/common/AppHeader';
 import MiniChart from '../../components/MiniChart';
 import { colors, layout, radius, shadows, spacing, typography } from '../../utils';
 import { formatINR } from '../../utils/format';
+import { showToast } from '../../utils/toast';
+import { addFavorite, removeFavorite } from '../../core/firebase/favorites';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -40,6 +42,8 @@ const generateRandomTrend = () => {
 
 export default function ProductDetailScreen({ route }) {
   const { id } = route.params;
+  const uid = useSelector((s) => s.auth.user?.uid);
+
 
   const dispatch = useDispatch();
   const favIds = useSelector((s) => s.favorites.ids);
@@ -103,16 +107,41 @@ export default function ProductDetailScreen({ route }) {
       </View>
     );
   }
+  const onToggleFavorite = async () => {
+    if (!uid) {
+      showToast('Please login to add favorites');
+      return;
+    }
+    try {
+      if (isFav) {
+        await removeFavorite(uid, id);
+      } else {
+        await addFavorite(uid, id);
+      }
+
+      dispatch(toggleFavorite(id));
+
+      showToast(
+        isFav
+          ? 'Removed from favorites'
+          : 'Added to favorites ❤️'
+      );
+    } catch (e) {
+      console.error('🔥 Favorite error:', e);
+      showToast('Failed to update favorite');
+    }
+  };
+
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
       <AppHeader title="Details" showBack />
 
       {/* <View style={styles.container}> */}
-            <ScrollView
-              contentContainerStyle={styles.container}
-              showsVerticalScrollIndicator={false}
-            >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Title */}
         <View style={styles.header}>
           <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
@@ -163,7 +192,7 @@ export default function ProductDetailScreen({ route }) {
           {/* Favorite Button */}
           <TouchableOpacity
             style={[styles.favBtn, isFav && styles.favBtnActive]}
-            onPress={() => dispatch(toggleFavorite(id))}
+            onPress={onToggleFavorite}
           >
             <Text style={[styles.favText, isFav && styles.favTextActive]}>
               {isFav ? '♥ Favorited' : '♡ Favorite'}
@@ -196,7 +225,7 @@ export default function ProductDetailScreen({ route }) {
 }
 
 const styles = StyleSheet.create({
-  container: { ...layout.screen  , flex : 0, paddingBottom: spacing['2xl']},
+  container: { ...layout.screen, flex: 0, paddingBottom: spacing['2xl'] },
 
   header: {
     paddingHorizontal: spacing['2xl'],
