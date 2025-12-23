@@ -1,6 +1,14 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { spacing, typography } from "../../utils";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { spacing } from "../../utils";
+const PRIMARY = "#3B82F6";
 
 export default function AppHeader({
   title,
@@ -11,66 +19,83 @@ export default function AppHeader({
   search,
   onChangeSearch,
 }) {
+  const { width, height } = useWindowDimensions();
   const navigation = useNavigation();
   const route = useRoute();
+  const isLandscape = width > height;
+  const iconSize = isLandscape ? 18 : 22;
 
   const screenTitle = title || route.name;
-
   return (
-    <View>
+    <View style={styles.wrapper}>
       {/* TOP BAR */}
-      <View style={styles.container}>
-        {/* BACK */}
-        {showBack ? (
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.leftIcon}
-          >
-            <Text style={styles.icon}>←</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.leftIcon} />
-        )}
+      <View
+        style={isLandscape ? [
+          styles.container_rotated,
+        ] : styles.container}
+      >
+        {/* LEFT */}
+        <View style={styles.side}>
+          {showBack && (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={[styles.iconButton, styles.primaryButton]}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.icon, styles.primaryIcon]}>←</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
-        {/* TITLE (always visible now) */}
-        <Text style={styles.title}>{screenTitle}</Text>
+        {/* TITLE */}
+        <Text numberOfLines={1} style={styles.title}>
+          {screenTitle}
+        </Text>
 
-        {/* RIGHT ICONS */}
-        <View style={styles.rightRow}>
+        {/* RIGHT */}
+        <View style={[styles.side, styles.right]}>
           {showFav && (
-            <TouchableOpacity onPress={() => navigation.navigate("Favorites")}>
-              <Text style={styles.icon}>❤️</Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("Favorites")}
+              // style={styles.iconButton}
+              style={[styles.iconButton, styles.primaryButton]}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.icon, styles.primaryIcon, { fontSize: iconSize }]}>♥</Text>
             </TouchableOpacity>
           )}
 
           {showProfile && (
             <TouchableOpacity
               onPress={() => navigation.navigate("ProfileSettings")}
-              style={{ marginLeft: showFav ? 16 : 0 }}
+              // style={[styles.iconButton, showFav && { marginLeft: 8 }]}
+              style={[styles.iconButton, styles.primaryButton]}
+              activeOpacity={0.7}
             >
-              <Text style={styles.icon}>⚙️</Text>
+              <Text style={[styles.icon, styles.primaryIcon, { fontSize: iconSize }]}>⚙︎</Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* SEARCH BAR (only if enabled) */}
+      {/* SEARCH */}
       {showSearch && (
-        <View style={styles.searchBox}>
-          <TextInput
-            placeholder="Search products"
-            placeholderTextColor="#999"
-            value={search}
-            onChangeText={onChangeSearch}
-            style={styles.searchInput}
-          />
-          {search?.length > 0 ? (
-            <TouchableOpacity onPress={() => onChangeSearch?.("")}>
-              <Text style={styles.clearIcon}>✕</Text>
-            </TouchableOpacity>
-          ) : (
+        <View style={styles.searchWrapper}>
+          <View style={styles.searchBox}>
             <Text style={styles.searchIcon}>🔍</Text>
-          )}
+            <TextInput
+              placeholder="Search products"
+              placeholderTextColor="#94a3b8"
+              value={search}
+              onChangeText={onChangeSearch}
+              style={styles.searchInput}
+            />
+            {search?.length > 0 && (
+              <TouchableOpacity onPress={() => onChangeSearch?.("")}>
+                <Text style={styles.clearIcon}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       )}
     </View>
@@ -78,58 +103,114 @@ export default function AppHeader({
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    backgroundColor: "#3B82F6",
+  },
+
   container: {
-    width: "100%",
-    height: 55,
+    height: 60,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: spacing.xl,
-    justifyContent: "space-between",
     backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
-  leftIcon: {
-    width: 40,
-    justifyContent: "center",
-  },
-  icon: {
-    fontSize: 22,
-  },
-  title: {
-    ...typography.title,
-    fontSize: 18,
-    fontWeight: "700",
-    textAlign: "center",
-    flex: 1,
-  },
-  rightRow: {
-    width: 70,
+    container_rotated: {
+    height: 60,
     flexDirection: "row",
-    justifyContent: "flex-end",
     alignItems: "center",
+    paddingHorizontal: spacing["4xl"],
+    backgroundColor: "#fff",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
 
-  // NEW SEARCH BAR
+  side: {
+    minWidth: 48,
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  containerLandscape: {
+    height: 48,
+    paddingHorizontal: spacing.md,
+  },
+
+  right: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f1f5f9",
+  },
+
+  /* PRIMARY STATE (easy to revert) */
+  primaryButton: {
+    backgroundColor: PRIMARY,
+  },
+
+  icon: {
+    fontSize: 18,
+    color: "#111",
+  },
+
+  primaryIcon: {
+    color: "#fff",
+  },
+
+  title: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0f172a",
+    letterSpacing: 0.3,
+  },
+
+  searchWrapper: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 10,
+    backgroundColor: "#fff",
+  },
+
   searchBox: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginHorizontal: 20,
-    marginTop: 6,
-    marginBottom: 6,
-    elevation: 3,
+    backgroundColor: "#EFF6FF",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 44,
+    borderWidth: 1,
+    borderColor: PRIMARY,
   },
+
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 6,
+    color: PRIMARY,
+  },
+
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: "#333",
+    color: "#0f172a",
   },
-  searchIcon: {
-    fontSize: 20,
-    marginLeft: 8,
+
+  clearIcon: {
+    fontSize: 14,
+    color: PRIMARY,
+    marginLeft: 6,
   },
 });

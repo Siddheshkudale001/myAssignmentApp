@@ -138,13 +138,13 @@ export default function HomeScreen({ navigation }) {
         {/* Modern FAB */}
         <TouchableOpacity
           style={styles.fab}
-          onPress={() => navigation.navigate("ProductList")}
+          onPress={() => navigation.navigate("ProductTabs")}
         >
-          <Text style={styles.fabIcon}>🗂️</Text>
+          <Text style={styles.fabIcon}>▦</Text>
         </TouchableOpacity>
 
         {/* </View> */}
-      </ScrollView>
+      </ScrollView> 
     </SafeAreaView>
   );
 }

@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleFavorite } from '../../store/slices/favoritesSlice';
+import { addToHistory } from '../../core/firebase/history';
 
 import AppHeader from '../../components/common/AppHeader';
 import MiniChart from '../../components/MiniChart';
@@ -87,6 +88,17 @@ export default function ProductDetailScreen({ route }) {
 
     load();
   }, [id]);
+  useEffect(() => {
+  if (!uid || !item) return;
+
+  addToHistory(uid, {
+    id: item.id,
+    title: item.title,
+    image: item.image,
+    price: item.price,
+  });
+}, [uid, item]);
+
 
   const priceText = useMemo(() => (item ? formatINR(item.price) : ''), [item]);
 

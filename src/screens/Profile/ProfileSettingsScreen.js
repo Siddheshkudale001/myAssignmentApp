@@ -105,7 +105,7 @@ export default function ProfileSettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }} edges={['top']} >
       <AppHeader title="Settings" showBack />
 
       <KeyboardAvoidingView

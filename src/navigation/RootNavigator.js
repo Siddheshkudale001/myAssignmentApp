@@ -4,7 +4,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../core/firebase/authInstance";
 import SplashScreen from "../screens/Splash/SplashScreen";
 import HomeScreen from "../screens/Home/HomeScreen";
-import ProductListScreen from "../screens/Products/ProductListScreen";
+import ProductTabs from "../screens/Products/ProductTabs";
 import ProductDetailScreen from "../screens/Products/ProductDetailScreen";
 import FavoritesScreen from "../screens/Favorites/FavoritesScreen";
 import ProfileSettingsScreen from "../screens/Profile/ProfileSettingsScreen";
@@ -31,7 +31,7 @@ export default function RootNavigator() {
       {user ? (
         <>
           <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="ProductList" component={ProductListScreen} />
+          <Stack.Screen name="ProductTabs" component={ProductTabs} />
           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
           <Stack.Screen name="Favorites" component={FavoritesScreen} />
           <Stack.Screen

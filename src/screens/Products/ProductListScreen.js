@@ -218,7 +218,7 @@ export default function ProductListScreen({ navigation }) {
 
   /* ---------------- render ---------------- */
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} >
       <AppHeader
         title="Products"
         showBack
